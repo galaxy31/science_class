@@ -142,7 +142,7 @@ details p{margin:6px 0 2px;font-size:15px;color:var(--accent);font-weight:700}
           <button type="button" id="setE1">여기를 E₁로</button>
           <button type="button" id="half">6개월 후로</button>
         </div>
-        <button type="button" id="blink" aria-pressed="false">E₁ ↔ E₂ 번갈아 보기</button>
+        <div class="row"><button type="button" id="blink" aria-pressed="false" disabled>E₁ ↔ E₂ 번갈아 보기</button><button type="button" id="clearE" disabled>E₁·E₂ 지우기</button></div>
       </div>
       <div class="seg">
         <span class="lbl">자세히 볼 별</span>
@@ -174,7 +174,7 @@ if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.protot
 const D2R=Math.PI/180, RC=6, DMIN=1.5, DMAX=5, K=0.62, TAU=Math.PI*2;
 const COL={S:'#ff5a48',T:'#5aaeff'};
 const INIT={a:-55*D2R,e1:-55*D2R,S:{x:-0.15,y:2.0},T:{x:0.7,y:3.94}};
-const st={a:INIT.a,e1:INIT.e1,hasE1:true,S:{...INIT.S},T:{...INIT.T},focus:'S',trace:true,play:false,anim:null,blink:false,phase:0,dirty:true};
+const st={a:INIT.a,e1:INIT.e1,hasE1:false,S:{...INIT.S},T:{...INIT.T},focus:'S',trace:true,play:false,anim:null,blink:false,phase:0,dirty:true};
 const $=id=>document.getElementById(id);
 const FONT=()=>getComputedStyle(document.body).fontFamily;
 
@@ -227,8 +227,7 @@ function drawDiag(){const{w,h,d}=dz,c=DX;c.setTransform(d,0,0,d,0,0);
  const fs=Math.max(14,Math.min(20,s*.2));
  // 선
  for(const k of['T','S']){const P=st[k],Ps=scr(P.x,P.y),foc=st.focus===k,col=COL[k];
-  line(c,sun,Ps,col,1.8,[6,6]);
-  if(st.hasE1){for(const[Ex,nm]of[[E1,'₁'],[E2,'₂']]){const A=apparent(Ex,P),As=scr(A.x,A.y),Exs=scr(Ex.x,Ex.y);c.globalAlpha=foc?.75:.4;line(c,Exs,As,col,foc?2:1.4);c.globalAlpha=1;
+  if(st.hasE1){line(c,sun,Ps,col,1.8,[6,6]);for(const[Ex,nm]of[[E1,'₁'],[E2,'₂']]){const A=apparent(Ex,P),As=scr(A.x,A.y),Exs=scr(Ex.x,Ex.y);c.globalAlpha=foc?.75:.4;line(c,Exs,As,col,foc?2:1.4);c.globalAlpha=1;
     glow(c,As.x,As.y,3,col);const o=unit(sun,As);label(c,k+nm,As.x+o.x*bw*.95,As.y+o.y*bw*.95,col,fs,'center');}}
   const A=apparent(E,P),As=scr(A.x,A.y);c.globalAlpha=foc?1:.6;line(c,Es,As,'#fff3c4',foc?2.6:1.6);c.globalAlpha=1;
   c.beginPath();c.arc(As.x,As.y,7,0,TAU);c.strokeStyle='#fff3c4';c.lineWidth=2.5;c.stroke();}
@@ -278,9 +277,9 @@ function drawGraph(){const{w,h,d}=gz,c=GX;c.setTransform(d,0,0,d,0,0);c.clearRec
 function months(){if(!st.hasE1)return null;const m=norm(curA()-st.e1)/TAU*12;return m;}
 function sync(){for(const k of['S','T']){const dd=dist(st[k]);$('d'+k).innerHTML=`${dd.toFixed(1)} pc <small>≈ ${(dd*3.26).toFixed(1)} 광년</small>`;$('p'+k).textContent=(1/dd).toFixed(2)+'″';}
  const dS=dist(st.S),dT=dist(st.T);$('compare').textContent=Math.abs(dS-dT)<.05?'두 별의 거리가 같아서 연주 시차도 같아요.':(dS<dT?'별 S가 별 T보다 가까워서 연주 시차가 더 커요.':'별 T가 별 S보다 가까워서 연주 시차가 더 커요.');
- const m=months();let t;if(m==null)t='지구';else{const r=Math.round(m*10)/10;t=Math.abs(r)<.05||Math.abs(r-12)<.05?'E₁ (관측 시작)':Math.abs(r-6)<.05?'E₂ (6개월 후)':`E₁에서 ${r%1?r.toFixed(1):r}개월 후`;}$('status').textContent=t;
+ const m=months();let t;if(m==null)t='관측 시작 위치를 E₁로 정해 보세요';else{const r=Math.round(m*10)/10;t=Math.abs(r)<.05||Math.abs(r-12)<.05?'E₁ (관측 시작)':Math.abs(r-6)<.05?'E₂ (6개월 후)':`E₁에서 ${r%1?r.toFixed(1):r}개월 후`;}$('status').textContent=t;
  $('fS').setAttribute('aria-pressed',st.focus==='S');$('fT').setAttribute('aria-pressed',st.focus==='T');$('trace').setAttribute('aria-pressed',st.trace);
- $('play').setAttribute('aria-pressed',st.play);$('play').textContent=st.play?'멈춤 ❚❚':'공전 ▶';$('blink').setAttribute('aria-pressed',st.blink);st.dirty=true;}
+ $('play').setAttribute('aria-pressed',st.play);$('play').textContent=st.play?'멈춤 ❚❚':'공전 ▶';$('blink').setAttribute('aria-pressed',st.blink);$('blink').disabled=!st.hasE1;$('clearE').disabled=!st.hasE1;$('setE1').textContent=st.hasE1?'여기를 E₁로 다시':'여기를 E₁로';st.dirty=true;}
 function stopAll(){st.play=false;st.anim=null;if(st.blink){st.blink=false;clearInterval(blinkT);}}
 function hideHint(){$('dragHint').classList.add('off');}
 function animateTo(target){const from=st.a;st.anim={from,to:target,t0:performance.now(),dur:1400};}
@@ -290,10 +289,11 @@ $('mNext').onclick=()=>{stopAll();animateTo(st.a+TAU/12);sync();};
 $('play').onclick=()=>{const p=!st.play;stopAll();st.play=p;hideHint();sync();};
 $('setE1').onclick=()=>{stopAll();st.e1=st.a;st.hasE1=true;sync();};
 $('half').onclick=()=>{stopAll();animateTo(st.a+Math.PI);hideHint();sync();};
-$('blink').onclick=()=>{if(st.blink){st.blink=false;clearInterval(blinkT);st.a=st.e1;}else{stopAll();st.blink=true;st.phase=1;blinkT=setInterval(()=>{st.phase^=1;sync();},900);}sync();};
+$('blink').onclick=()=>{if(!st.hasE1)return;if(st.blink){st.blink=false;clearInterval(blinkT);st.a=st.e1;}else{stopAll();st.blink=true;st.phase=1;blinkT=setInterval(()=>{st.phase^=1;sync();},900);}sync();};
+$('clearE').onclick=()=>{stopAll();st.hasE1=false;sync();};
 $('fS').onclick=()=>{st.focus='S';sync();};$('fT').onclick=()=>{st.focus='T';sync();};
 $('trace').onclick=()=>{st.trace=!st.trace;sync();};
-$('reset').onclick=()=>{stopAll();Object.assign(st,{a:INIT.a,e1:INIT.e1,hasE1:true,S:{...INIT.S},T:{...INIT.T},focus:'S',trace:true});$('dragHint').classList.remove('off');sync();};
+$('reset').onclick=()=>{stopAll();Object.assign(st,{a:INIT.a,e1:INIT.e1,hasE1:false,S:{...INIT.S},T:{...INIT.T},focus:'S',trace:true});$('dragHint').classList.remove('off');sync();};
 
 let drag=null;
 dc.addEventListener('pointerdown',e=>{const r=dc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
