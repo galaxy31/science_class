@@ -72,6 +72,9 @@ aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;pa
 .custom .row{display:flex;justify-content:space-between;align-items:baseline}
 .custom .val{font-weight:700;font-variant-numeric:tabular-nums}
 input[type=range]{width:100%;height:36px;accent-color:var(--accent);margin:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two button{font-size:15px}
+.real{margin:0;font-size:13px;color:var(--muted)}
 .rank{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rank ol{margin:4px 0 0;padding-left:20px;font-size:15px;display:flex;flex-direction:column;gap:2px}
 .rank li.sel{font-weight:700;color:var(--accent)}
@@ -106,7 +109,7 @@ details p{margin:6px 0 2px;font-size:15px;color:var(--accent);font-weight:700}
       <h1>겉보기 등급과 절대 등급</h1>
     </div>
     <div class="headR">
-      <span class="hint">별을 모두 10 pc로 옮겨 실제 밝기를 비교해 보세요</span>
+      <span class="hint">별을 하나씩 끌어 옮기거나, 모두 10 pc로 옮겨 보세요</span>
       <button class="fs" id="fsBtn" type="button" aria-label="전체 화면">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
         <span id="fsLabel">전체 화면</span>
@@ -136,23 +139,25 @@ details p{margin:6px 0 2px;font-size:15px;color:var(--accent);font-weight:700}
       <div class="card">
         <span class="nm" id="nm">시리우스</span>
         <div class="nums">
-          <div class="num"><span class="k">겉보기 등급</span><span class="v" id="vm">−1.5</span><span class="s">눈에 보이는 밝기</span></div>
+          <div class="num"><span class="k">겉보기 등급</span><span class="v" id="vm">−1.5</span><span class="s">지금 보이는 밝기</span></div>
           <div class="num"><span class="k">절대 등급</span><span class="v" id="vM">1.4</span><span class="s">10 pc에서의 밝기</span></div>
-          <div class="num"><span class="k">거리</span><span class="v" id="vd">2.6 pc</span><span class="s" id="vly">약 8.6 광년</span></div>
+          <div class="num"><span class="k">지금 거리</span><span class="v" id="vd">2.6 pc</span><span class="s" id="vly">약 8.6 광년</span></div>
         </div>
         <div class="verdict near" id="verdict">겉보기 등급이 절대 등급보다 작아요 → 10 pc보다 가까이 있는 별</div>
+        <div class="two"><button type="button" id="to10">이 별만 10 pc로</button><button type="button" id="home">원래 자리로</button></div>
+        <p class="real" id="real" hidden></p>
         <div class="custom" id="custom" hidden>
           <div class="row"><label class="lbl" for="cM">절대 등급 (실제 밝기)</label><span class="val" id="cMv">1.0</span></div>
           <input type="range" id="cM" min="-9" max="8" step="0.1" value="1">
           <div class="row"><label class="lbl" for="cD">지구에서의 거리</label><span class="val" id="cDv">10 pc</span></div>
           <input type="range" id="cD" min="0" max="3" step="0.01" value="1">
-          <p class="rule" style="margin-top:2px">장면에서 나만의 별을 끌어도 거리가 바뀌어요.</p>
+          <p class="rule" style="margin-top:2px">장면에서 별을 끌어도 거리가 바뀌어요.</p>
         </div>
       </div>
       <p class="rule"><b>겉보기 등급 &lt; 절대 등급</b> → 10 pc보다 가까움<br><b>겉보기 등급 = 절대 등급</b> → 10 pc에 있음<br><b>겉보기 등급 &gt; 절대 등급</b> → 10 pc보다 멂</p>
       <hr>
       <div class="rank">
-        <div><span class="t">밤하늘에서 밝게 보이는 순서</span><ol id="rankM"></ol></div>
+        <div><span class="t">지금 밝게 보이는 순서</span><ol id="rankM"></ol></div>
         <div><span class="t">실제로 밝은 순서</span><ol id="rankA"></ol></div>
       </div>
       <hr>
@@ -180,12 +185,16 @@ const STARS=[
  {id:'deneb',name:'데네브',m:1.3,M:-8.7,ang:4,col:'#7cc0ff'},
  {id:'polaris',name:'북극성',m:2.1,M:-3.7,ang:-12,col:'#ffd47e'},
  {id:'mine',name:'나만의 별',M:1,d:10,ang:-26,col:'#7ef0c0',custom:true}];
-const st={sel:'sirius',t:0,target:0,dirty:true};
+const st={sel:'sirius',dirty:true,moving:false};
 const $=id=>document.getElementById(id);
 const FONT=()=>getComputedStyle(document.body).fontFamily;
 const byId=id=>STARS.find(s=>s.id===id);
 const dist=s=>s.custom?s.d:Math.pow(10,(s.m-s.M+5)/5);
 const appM=s=>s.custom?s.M+5*Math.log10(s.d/10):s.m;
+STARS.forEach(s=>{s.L0=Math.log10(dist(s));s.L=s.T=s.L0;});
+const appNow=s=>s.M+5*(s.L-1);
+const at10=s=>Math.abs(s.L-1)<.005, atHome=s=>Math.abs(s.L-s.L0)<.005;
+const minL=s=>s.id==='sun'?s.L0:0, MAXL=3;
 const fmt=v=>{const r=Math.round(v*10)/10;return(r<0?'−':'')+Math.abs(r).toFixed(1);};
 function fmtD(d){if(d<.001)return'약 0.000005 pc';return d<10?d.toFixed(1)+' pc':Math.round(d).toLocaleString('ko-KR')+' pc';}
 function fmtLy(d){if(d<.001)return'약 1억 5천만 km';const ly=d*3.26;return'약 '+(ly<10?ly.toFixed(1):Math.round(ly).toLocaleString('ko-KR'))+' 광년';}
@@ -199,7 +208,8 @@ function geo(){const{w,h}=sz;G.ex=Math.max(44,w*.06);G.rMax=w-G.ex-60;const up=.
  G.K=Math.min(.62,(h-110)/(G.rMax*(up+dn)));G.ey=48+G.rMax*G.K*up+20;}
 function rfrac(d){const l=Math.log10(d);return l<0?.07+.09*(l-LSUN)/(-LSUN):.16+.84*l/LMAX;}
 const pos=(r,a)=>({x:G.ex+r*Math.cos(a*D2R),y:G.ey-r*Math.sin(a*D2R)*G.K});
-function state(s,t){const L0=Math.log10(dist(s)),Lt=L0+(1-L0)*t;return{r:rfrac(Math.pow(10,Lt))*G.rMax,mag:s.M+5*(Lt-1)};}
+function state(s){return{r:rfrac(Math.pow(10,s.L))*G.rMax,mag:appNow(s)};}
+function invR(f){return f<.16?LSUN+(Math.max(.07,f)-.07)/.09*(-LSUN):(f-.16)/.84*LMAX;}
 let seed=9;const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
 const BG=Array.from({length:240},()=>({x:rnd(),y:rnd(),r:rnd()*1.2+.3,a:rnd()*.5+.15}));
 function text(c,t,x,y,{size=15,col='#e8ecff',align='center',weight=700,base='middle'}={}){c.font=`${weight} ${size}px ${FONT()}`;c.textAlign=align;c.textBaseline=base;c.lineWidth=4;c.strokeStyle='rgba(6,10,28,.9)';c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y);}
@@ -220,9 +230,10 @@ function drawScene(){const{w,h,d}=sz,c=S;c.setTransform(d,0,0,d,0,0);
  c.beginPath();c.ellipse(G.ex,G.ey,r10,r10*G.K,0,-46*D2R,36*D2R);c.strokeStyle='rgba(235,225,255,.9)';c.lineWidth=3;c.stroke();
  const p10=pos(r10,-38);text(c,'거리 10 pc',p10.x+8,p10.y+16,{size:fs*1.05,col:'#efe6ff',align:'left'});
  // 시선
- for(const s of STARS){const q=state(s,st.t),p=pos(q.r,s.ang),sel=s.id===st.sel;c.beginPath();c.moveTo(G.ex,G.ey);c.lineTo(p.x,p.y);c.strokeStyle=s.col;c.globalAlpha=sel?.75:.22;c.lineWidth=sel?2.2:1.2;c.stroke();c.globalAlpha=1;}
+ for(const s of STARS){const q=state(s),p=pos(q.r,s.ang),sel=s.id===st.sel;c.beginPath();c.moveTo(G.ex,G.ey);c.lineTo(p.x,p.y);c.strokeStyle=s.col;c.globalAlpha=sel?.75:.22;c.lineWidth=sel?2.2:1.2;c.stroke();c.globalAlpha=1;}
  // 선택한 별: 지금 위치 → 10 pc
- {const s=byId(st.sel),a=pos(state(s,0).r,s.ang),b=pos(r10,s.ang);if(Math.hypot(a.x-b.x,a.y-b.y)>16){c.setLineDash([6,5]);c.strokeStyle='#ffffff';c.lineWidth=2;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();c.setLineDash([]);
+ {const s=byId(st.sel),a=pos(rfrac(Math.pow(10,s.L0))*G.rMax,s.ang),b=pos(r10,s.ang);
+  if(!atHome(s)&&!s.custom){c.beginPath();c.arc(a.x,a.y,9,0,TAU);c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1.5;c.setLineDash([3,3]);c.stroke();c.setLineDash([]);text(c,'원래 자리',a.x,a.y+22,{size:fs*.8,weight:500,col:'rgba(235,240,255,.85)'});}if(Math.hypot(a.x-b.x,a.y-b.y)>16){c.setLineDash([6,5]);c.strokeStyle='#ffffff';c.lineWidth=2;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();c.setLineDash([]);
    const u={x:b.x-a.x,y:b.y-a.y},l=Math.hypot(u.x,u.y);u.x/=l;u.y/=l;c.beginPath();c.moveTo(b.x,b.y);c.lineTo(b.x-u.x*12-u.y*7,b.y-u.y*12+u.x*7);c.lineTo(b.x-u.x*12+u.y*7,b.y-u.y*12-u.x*7);c.closePath();c.fillStyle='#ffffff';c.fill();}
   c.beginPath();c.arc(b.x,b.y,8,0,TAU);c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=1.5;c.setLineDash([2,3]);c.stroke();c.setLineDash([]);}
  // 지구
@@ -230,9 +241,9 @@ function drawScene(){const{w,h,d}=sz,c=S;c.setTransform(d,0,0,d,0,0);
  c.beginPath();c.arc(G.ex,G.ey,er,0,TAU);c.fillStyle=eg;c.fill();text(c,'지구',G.ex,G.ey+er+14,{size:fs});
  // 별
  const order=STARS.slice().sort((a,b)=>(a.id===st.sel)-(b.id===st.sel));
- for(const s of order){const q=state(s,st.t),p=pos(q.r,s.ang),sel=s.id===st.sel;star(c,p.x,p.y,q.mag,s.col);
+ for(const s of order){const q=state(s),p=pos(q.r,s.ang),sel=s.id===st.sel;star(c,p.x,p.y,q.mag,s.col);
   if(sel){c.beginPath();c.arc(p.x,p.y,coreR(q.mag)+9,0,TAU);c.strokeStyle='#ffffff';c.lineWidth=2.5;c.stroke();}
-  const kind=st.t<.01?'겉보기 등급 ':st.t>.99?'절대 등급 ':'';const off=coreR(q.mag)*(q.mag<-12?2.2:1)+12;
+  const kind=at10(s)?'겉보기 = 절대 등급 ':'겉보기 등급 ';const off=coreR(q.mag)*(q.mag<-12?2.2:1)+12;
   c.font=`700 ${fs}px ${FONT()}`;const tw=Math.max(c.measureText(s.name).width,c.measureText(kind+fmt(q.mag)).width*.9);
   const flip=p.x+off+tw>w-8,lx=flip?p.x-off:p.x+off,al=flip?'right':'left';
   text(c,s.name,lx,p.y-9,{size:fs*(sel?1.08:.95),col:sel?'#ffffff':s.col,align:al});
@@ -256,12 +267,12 @@ function drawLadder(){const{w,h,d}=lz,c=L;c.setTransform(d,0,0,d,0,0);geo2();
  text(c,'−27',xM(-26.8),LG.y1+16,{size:fs*.78,weight:500,col:'rgba(200,212,255,.75)'});
  text(c,'◀ 밝다',LG.mL,h-12,{size:fs*.82,align:'left',weight:500,col:'#ffe7a8'});text(c,'어둡다 ▶',LG.mR,h-12,{size:fs*.82,align:'right',weight:500,col:'#b9c2e0'});
  // 선택한 별 연결선
- const s=byId(st.sel),m=appM(s),x1=xM(m),x2=xM(s.M);
+ const s=byId(st.sel),m=appNow(s),x1=xM(m),x2=xM(s.M);
  c.strokeStyle=s.col;c.lineWidth=2.5;c.setLineDash([6,4]);c.beginPath();c.moveTo(x1,LG.y1);c.lineTo(x2,LG.y2);c.stroke();c.setLineDash([]);
  const diff=m-s.M,mx=(x1+x2)/2,my=(LG.y1+LG.y2)/2;const tt=Math.abs(diff)<.05?'차이 0':`차이 ${fmt(Math.abs(diff))}`;
  c.font=`700 ${fs*.85}px ${FONT()}`;const tw=c.measureText(tt).width+14;c.fillStyle='rgba(11,18,48,.92)';c.beginPath();c.roundRect(mx-tw/2,my-11,tw,22,6);c.fill();text(c,tt,mx,my,{size:fs*.85,col:'#ffffff'});
  // 별 점 + 이름 (겹치면 층 나누기)
- for(const[y,get,dir]of[[LG.y1,appM,-1],[LG.y2,x=>x.M,1]]){
+ for(const[y,get,dir]of[[LG.y1,appNow,-1],[LG.y2,x=>x.M,1]]){
   const items=STARS.map(o=>({o,x:xM(get(o))})).sort((a,b)=>a.x-b.x);const lv=[];
   items.forEach((it,i)=>{c.font=`700 ${fs*.9}px ${FONT()}`;it.tw=c.measureText(it.o.name).width;let k=0;while(lv[k]!=null&&it.x-it.tw/2<lv[k]+6)k++;lv[k]=it.x+it.tw/2;it.k=k;});
   for(const it of items){const sel=it.o.id===st.sel,r=sel?9:6.5;c.beginPath();c.arc(it.x,y,r,0,TAU);c.fillStyle=it.o.col;c.globalAlpha=sel?1:.85;c.fill();c.globalAlpha=1;
@@ -272,7 +283,7 @@ function drawLadder(){const{w,h,d}=lz,c=L;c.setTransform(d,0,0,d,0,0);geo2();
 /* ---------- 패널 ---------- */
 const picks=$('picks');
 STARS.forEach(s=>{const b=document.createElement('button');b.type='button';b.id='p_'+s.id;b.innerHTML=`<span class="dot" style="background:${s.col}"></span>${s.name}`;b.onclick=()=>{st.sel=s.id;sync();};picks.appendChild(b);});
-function sync(){const s=byId(st.sel),m=appM(s),dd=dist(s);
+function sync(){const s=byId(st.sel),m=appNow(s),dd=Math.pow(10,s.L);
  STARS.forEach(o=>$('p_'+o.id).setAttribute('aria-pressed',o.id===st.sel));
  $('nm').textContent=s.name;$('nm').style.color='';$('vm').textContent=fmt(m);$('vM').textContent=fmt(s.M);$('vd').textContent=fmtD(dd);$('vly').textContent=fmtLy(dd);
  const v=$('verdict'),df=Math.round(m*10)/10-Math.round(s.M*10)/10;
@@ -280,29 +291,36 @@ function sync(){const s=byId(st.sel),m=appM(s),dd=dist(s);
  else if(df<0){v.className='verdict near';v.textContent=`겉보기 등급(${fmt(m)})이 절대 등급(${fmt(s.M)})보다 작아요 → 10 pc보다 가까이 있어서 실제보다 밝게 보여요`;}
  else{v.className='verdict far';v.textContent=`겉보기 등급(${fmt(m)})이 절대 등급(${fmt(s.M)})보다 커요 → 10 pc보다 멀리 있어서 실제보다 어둡게 보여요`;}
  $('custom').hidden=!s.custom;const mine=byId('mine');$('cM').value=mine.M;$('cMv').textContent=fmt(mine.M);$('cD').value=Math.log10(mine.d);$('cDv').textContent=fmtD(mine.d);
- const go=$('go');go.setAttribute('aria-pressed',st.target===1);go.textContent=st.target===1?'원래 거리로 되돌리기':'모든 별을 10 pc로 옮기기';
- const md=$('mode');md.textContent=st.target===1?'모두 10 pc · 절대 등급':'지금 위치 · 겉보기 등급';md.className='mode'+(st.target===1?' abs':'');
+ const all10=STARS.every(o=>Math.abs(o.T-1)<.005),allHome=STARS.every(o=>atHome(o));
+ const go=$('go');go.setAttribute('aria-pressed',all10);go.textContent=all10?'모든 별을 원래 자리로':'모든 별을 10 pc로 옮기기';
+ const md=$('mode');md.textContent=STARS.every(at10)?'모두 10 pc · 절대 등급 비교':allHome?'실제 위치 · 겉보기 등급':'옮긴 별이 있어요';md.className='mode'+(STARS.every(at10)?' abs':'');
+ $('to10').disabled=Math.abs(s.T-1)<.005;$('home').disabled=Math.abs(s.T-s.L0)<.005;$('home').hidden=!!s.custom;$('to10').parentElement.style.gridTemplateColumns=s.custom?'1fr':'';
+ const rl=$('real');rl.hidden=s.custom||atHome(s);rl.textContent=`실제 위치: 거리 ${fmtD(Math.pow(10,s.L0))}, 겉보기 등급 ${fmt(appM(s))}`;
  const li=(arr,key)=>arr.slice().sort((a,b)=>key(a)-key(b)).map(o=>`<li class="${o.id===st.sel?'sel':''}">${o.name} <span style="color:var(--muted);font-weight:500">(${fmt(key(o))})</span></li>`).join('');
- $('rankM').innerHTML=li(STARS,appM);$('rankA').innerHTML=li(STARS,o=>o.M);st.dirty=true;}
-$('go').onclick=()=>{st.target=st.target===1?0:1;sync();};
+ $('rankM').innerHTML=li(STARS,appNow);$('rankA').innerHTML=li(STARS,o=>o.M);st.dirty=true;}
+$('go').onclick=()=>{const all10=STARS.every(o=>Math.abs(o.T-1)<.005);STARS.forEach(o=>o.T=all10?o.L0:1);sync();};
+$('to10').onclick=()=>{byId(st.sel).T=1;sync();};
+$('home').onclick=()=>{const s=byId(st.sel);s.T=s.L0;sync();};
 $('cM').addEventListener('input',e=>{byId('mine').M=+e.target.value;sync();});
-$('cD').addEventListener('input',e=>{let v=+e.target.value;if(Math.abs(v-1)<.03)v=1;byId('mine').d=Math.pow(10,v);sync();});
+$('cD').addEventListener('input',e=>{let v=+e.target.value;if(Math.abs(v-1)<.03)v=1;const s=byId('mine');s.d=Math.pow(10,v);s.L0=s.L=s.T=v;sync();});
 
 /* ---------- 끌기·누르기 ---------- */
-let drag=false;
+let drag=null;
 sc.addEventListener('pointerdown',e=>{const b=sc.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;let best=null,bd=40;
- for(const s of STARS){const p=pos(state(s,st.t).r,s.ang),dd=Math.hypot(x-p.x,y-p.y);if(dd<bd){bd=dd;best=s;}}
- if(!best)return;st.sel=best.id;if(best.custom){drag=true;st.target=0;st.t=0;sc.setPointerCapture(e.pointerId);}sync();});
-sc.addEventListener('pointermove',e=>{if(!drag)return;const b=sc.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,s=byId('mine');
+ for(const s of STARS){const p=pos(state(s).r,s.ang),dd=Math.hypot(x-p.x,y-p.y);if(dd<bd){bd=dd;best=s;}}
+ if(!best)return;st.sel=best.id;drag=best;best.T=best.L;sc.setPointerCapture(e.pointerId);sync();});
+sc.addEventListener('pointermove',e=>{if(!drag)return;const b=sc.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top,s=drag;
  const a=s.ang*D2R,ux=Math.cos(a),uy=-Math.sin(a)*G.K,l2=ux*ux+uy*uy,r=((x-G.ex)*ux+(y-G.ey)*uy)/l2;
- let f=r/G.rMax;f=Math.max(.16,Math.min(.16+.84*3/LMAX,f));let lg=(f-.16)/.84*LMAX;if(Math.abs(lg-1)<.04)lg=1;s.d=Math.pow(10,lg);sync();});
-const end=()=>{drag=false;};sc.addEventListener('pointerup',end);sc.addEventListener('pointercancel',end);
+ let lg=Math.max(minL(s),Math.min(MAXL,invR(r/G.rMax)));if(Math.abs(lg-1)<.04)lg=1;else if(!s.custom&&Math.abs(lg-s.L0)<.04)lg=s.L0;
+ s.L=s.T=lg;if(s.custom){s.d=Math.pow(10,lg);s.L0=lg;}sync();});
+const end=()=>{drag=null;};sc.addEventListener('pointerup',end);sc.addEventListener('pointercancel',end);
 lc.addEventListener('pointerdown',e=>{const b=lc.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;let best=null,bd=36;
- for(const s of STARS)for(const[yy,mm]of[[LG.y1,appM(s)],[LG.y2,s.M]]){const dd=Math.hypot(x-xM(mm),y-yy);if(dd<bd){bd=dd;best=s;}}
+ for(const s of STARS)for(const[yy,mm]of[[LG.y1,appNow(s)],[LG.y2,s.M]]){const dd=Math.hypot(x-xM(mm),y-yy);if(dd<bd){bd=dd;best=s;}}
  if(best){st.sel=best.id;sync();}});
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SUMMARY')return;
  if(e.key===' '){$('go').click();e.preventDefault();}else if(e.key==='f'||e.key==='F')toggleFS();
- else if(e.key>='1'&&e.key<='5'){st.sel=STARS[+e.key-1].id;sync();}});
+ else if(e.key>='1'&&e.key<='5'){st.sel=STARS[+e.key-1].id;sync();}
+ else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){const s=byId(st.sel);s.T=Math.max(minL(s),Math.min(MAXL,s.T+(e.key==='ArrowRight'?.1:-.1)));if(s.custom){s.d=Math.pow(10,s.T);s.L0=s.T;}sync();e.preventDefault();}});
 
 function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3500);}
 const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
@@ -315,7 +333,8 @@ document.addEventListener('fullscreenchange',fsChange);document.addEventListener
 
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;let last=performance.now();
 function loop(t){const dt=Math.min(.1,(t-last)/1000);last=t;
- if(st.t!==st.target){const sp=reduce?99:dt/1.6;st.t=st.target>st.t?Math.min(st.target,st.t+sp):Math.max(st.target,st.t-sp);st.dirty=true;}
+ let mv=false;for(const s of STARS)if(s.L!==s.T){if(reduce||Math.abs(s.T-s.L)<.003)s.L=s.T;else s.L+=(s.T-s.L)*Math.min(1,dt*3.2);if(s.custom){s.d=Math.pow(10,s.L);}mv=true;}
+ if(mv)sync();
  if(st.dirty&&sz.w>1){drawScene();drawLadder();st.dirty=false;}requestAnimationFrame(loop);}
 sz=fit(sc);lz=fit(lc);geo();sync();requestAnimationFrame(loop);
 if(document.fonts)document.fonts.ready.then(()=>{st.dirty=true;});
