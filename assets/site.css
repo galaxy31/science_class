@@ -1,0 +1,48 @@
+/* 과학 수업 도구 모음 — 공통 스타일 (첫 화면 + 분야 페이지) */
+:root{
+  --bg:#eef2ef; --panel:#ffffff; --ink:#1c2a23; --muted:#5a6a61; --line:#d3ddd6; --chip:#f2f6f3;
+  --phy:#2f5bd3; --chem:#b8327a; --life:#2e8a3e; --earth:#c2661c;
+  --display:"Do Hyeon","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111814; --panel:#1a231e; --ink:#e6efe9; --muted:#9fb2a7; --line:#2b3a32; --chip:#222d27;
+  --phy:#7d9cf5; --chem:#ec79b5; --life:#6cc77a; --earth:#f0a060; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111814; --panel:#1a231e; --ink:#e6efe9; --muted:#9fb2a7; --line:#2b3a32; --chip:#222d27;
+  --phy:#7d9cf5; --chem:#ec79b5; --life:#6cc77a; --earth:#f0a060; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:32px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+a:focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:10px}
+.crumb{font-size:15px;color:var(--muted);margin-bottom:6px}
+.crumb a{text-decoration:none;font-weight:700}
+.crumb a:hover{text-decoration:underline}
+.eyebrow{font-size:14px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(36px,5vw,60px);line-height:1.05;margin:4px 0 8px;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:60ch}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(24px,2.6vw,30px);margin:40px 0 14px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:28px}
+.field{--c:var(--ink);display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);
+  border-top:6px solid var(--c);border-radius:14px;padding:18px 18px 16px;text-decoration:none;min-width:0;transition:transform .15s,border-color .15s}
+.field:hover{transform:translateY(-2px);border-color:var(--c)}
+.field .name{font-family:var(--display);font-size:32px;line-height:1;color:var(--c)}
+.field .en{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.field .desc{font-size:15px;color:var(--muted);margin:0}
+.field .count{margin-top:auto;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.f-physics{--c:var(--phy)}.f-chemistry{--c:var(--chem)}.f-life_science{--c:var(--life)}.f-earth_science{--c:var(--earth)}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.tool{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:18px;text-decoration:none;min-width:0;transition:border-color .15s}
+.tool:hover{border-color:var(--c)}
+.tool .meta{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.pill.fieldpill{background:var(--c);color:var(--panel)}
+.tool .title{font-family:var(--display);font-size:26px;line-height:1.15}
+.tool .sum{margin:0;font-size:15px;color:var(--muted)}
+.tool .go{margin-top:auto;font-weight:700;color:var(--c);font-size:15px}
+.empty{background:var(--panel);border:1.5px dashed var(--line);border-radius:14px;padding:28px;color:var(--muted);text-align:center}
+footer{margin-top:48px;font-size:14px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.field{transition:none}.field:hover{transform:none}}
