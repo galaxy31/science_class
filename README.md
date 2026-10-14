@@ -12,7 +12,7 @@
 | 물리학 | [/physics/](https://galaxy31.github.io/science_class/physics/) | 준비 중 |
 | 화학 | [/chemistry/](https://galaxy31.github.io/science_class/chemistry/) | 준비 중 |
 | 생명과학 | [/life_science/](https://galaxy31.github.io/science_class/life_science/) | 준비 중 |
-| 지구과학 | [/earth_science/](https://galaxy31.github.io/science_class/earth_science/) | [시차 관찰 산책길](https://galaxy31.github.io/science_class/earth_science/parallax/) |
+| 지구과학 | [/earth_science/](https://galaxy31.github.io/science_class/earth_science/) | [시차 관찰 산책길](https://galaxy31.github.io/science_class/earth_science/parallax/), [연주 시차 관측소](https://galaxy31.github.io/science_class/earth_science/annual_parallax/) |
 
 ## 도구 추가하는 법
 
