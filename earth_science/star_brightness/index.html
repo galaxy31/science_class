@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>별의 밝기와 등급</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 왼쪽 위 '거리와 밝기' 실험, 왼쪽 아래 '등급과 밝기' 눈금, 오른쪽 조작·결과 패널 (전자칠판 16:9 기준) */
+:root{
+  --bg:#efede6; --panel:#ffffff; --ink:#221d14; --muted:#655d4e; --line:#ddd6c6; --chip:#f6f3ec;
+  --accent:#b45309; --a:#d97706; --b:#0f9488;
+  --display:"Do Hyeon","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13110d; --panel:#1d1a14; --ink:#f1ebdf; --muted:#b2a891; --line:#332e24; --chip:#262219;
+  --accent:#f5a524; --a:#f5a524; --b:#2dd4bf; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13110d; --panel:#1d1a14; --ink:#f1ebdf; --muted:#b2a891; --line:#332e24; --chip:#262219;
+  --accent:#f5a524; --a:#f5a524; --b:#2dd4bf; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;box-sizing:border-box;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.eyebrow{font-size:13px;letter-spacing:.08em;color:var(--muted);font-weight:500}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,2.6vw,38px);margin:0;line-height:1.1}
+.headR{display:flex;align-items:center;gap:12px}
+.hint{color:var(--muted);font-size:15px}
+button{font:inherit;font-weight:500;color:var(--ink);background:var(--chip);border:1.5px solid var(--line);border-radius:10px;min-height:48px;padding:0 14px;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;touch-action:manipulation}
+button:hover{border-color:var(--muted)}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.4;cursor:not-allowed}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.fs{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fs svg{width:20px;height:20px}
+main{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:12px;min-height:0}
+.left{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:12px;min-height:0}
+.stage{position:relative;border-radius:14px;overflow:hidden;min-height:0;background:#0a0f24;border:1px solid var(--line)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#distWrap{cursor:ew-resize}#magWrap{cursor:pointer}
+.cap{position:absolute;left:12px;top:10px;color:#f4ead2;font-size:15px;font-weight:700;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.cap span{font-weight:500;opacity:.8;margin-left:6px}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0}
+.lbl{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.sec{display:flex;flex-direction:column;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--chip);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.stat .k{font-size:12px;font-weight:700;color:var(--muted)}
+.stat .v{font-family:var(--display);font-size:clamp(22px,2vw,30px);line-height:1.15;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;height:36px;accent-color:var(--accent);margin:0}
+.row{display:flex;gap:8px}
+.row button{flex:1 1 0}
+.pick{display:grid;grid-template-columns:auto 48px 1fr 48px;gap:6px;align-items:center}
+.pick .tag{font-family:var(--display);font-size:22px;width:30px;text-align:center}
+.pick .mag{font-family:var(--display);font-size:24px;text-align:center;font-variant-numeric:tabular-nums}
+.pick button{padding:0;font-size:22px}
+.tagA{color:var(--a)}.tagB{color:var(--b)}
+.result{background:var(--chip);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.result .big{font-family:var(--display);font-size:clamp(20px,1.6vw,25px);line-height:1.25}
+.result .ex{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);margin:0}
+hr{border:0;border-top:1px solid var(--line);margin:0}
+details{background:var(--chip);border-radius:10px;padding:8px 12px}
+details+details{margin-top:6px}
+summary{cursor:pointer;font-weight:500;font-size:15px;min-height:32px;display:flex;align-items:center}
+details p{margin:6px 0 2px;font-size:15px;color:var(--accent);font-weight:700}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:15px;max-width:min(90vw,520px);text-align:center;z-index:9}
+@media (max-width:900px),(max-height:600px){
+  html,body{height:auto}.app{height:auto}
+  main{grid-template-columns:minmax(0,1fr)}
+  .left{grid-template-rows:auto auto}
+  #distWrap{aspect-ratio:16/10;max-width:100%}
+  #magWrap{aspect-ratio:4/3;max-width:100%}
+  .hint{display:none}
+}
+@media (max-width:600px){.cap span{display:none}}
+</style>
+<style>*{box-sizing:border-box}body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="app">
+  <header>
+    <div>
+      <div class="eyebrow">과학 · 별과 우주 · 별의 밝기</div>
+      <h1>별의 밝기와 등급</h1>
+    </div>
+    <div class="headR">
+      <span class="hint">스크린을 끌고, 별을 눌러 비교해 보세요</span>
+      <button class="fs" id="fsBtn" type="button" aria-label="전체 화면">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        <span id="fsLabel">전체 화면</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="left">
+      <section class="stage" id="distWrap" aria-label="거리와 밝기 실험. 좌우로 끌면 스크린이 움직입니다.">
+        <canvas id="dist"></canvas>
+        <div class="cap">① 별까지의 거리와 밝기<span>스크린을 좌우로 끌어 보세요</span></div>
+      </section>
+      <section class="stage" id="magWrap" aria-label="등급과 밝기 눈금. 별을 누르거나 A, B를 끌어 비교합니다.">
+        <canvas id="mag"></canvas>
+        <div class="cap">② 등급과 밝기<span>별을 누르거나 A·B를 끌어 비교해 보세요</span></div>
+      </section>
+    </div>
+
+    <aside>
+      <div class="sec">
+        <span class="lbl">① 거리가 멀어지면</span>
+        <div class="stats">
+          <div class="stat"><span class="k">별까지 거리</span><span class="v" id="rV">1r</span></div>
+          <div class="stat"><span class="k">빛이 닿는 면적</span><span class="v" id="aV">1배</span></div>
+          <div class="stat"><span class="k">단위 면적당 밝기</span><span class="v" id="bV">1배</span></div>
+        </div>
+        <input type="range" id="r" min="1" max="4" step="0.01" value="1" aria-label="별까지의 거리">
+        <div class="row">
+          <button type="button" id="ghost" aria-pressed="false">1r·2r·3r 함께 보기</button>
+        </div>
+        <p class="note" id="lawNote">거리가 2배, 3배가 되면 밝기는 1/2², 1/3²로 줄어요. 밝기는 거리의 제곱에 반비례해요.</p>
+      </div>
+      <hr>
+      <div class="sec">
+        <span class="lbl">② 두 별의 밝기 비교</span>
+        <div class="pick"><span class="tag tagA">A</span><button type="button" id="aMinus" aria-label="A 등급 낮추기">−</button><span class="mag" id="aM">1등급</span><button type="button" id="aPlus" aria-label="A 등급 높이기">+</button></div>
+        <div class="pick"><span class="tag tagB">B</span><button type="button" id="bMinus" aria-label="B 등급 낮추기">−</button><span class="mag" id="bM">6등급</span><button type="button" id="bPlus" aria-label="B 등급 높이기">+</button></div>
+        <div class="result"><span class="big" id="cmp">A가 B보다 약 100배 밝아요</span><span class="ex" id="expr">2.5 × 2.5 × 2.5 × 2.5 × 2.5 ≈ 100</span></div>
+        <div class="row">
+          <button type="button" id="link" aria-pressed="true">①의 별 함께 보기</button>
+          <button type="button" id="reset">처음으로</button>
+        </div>
+        <p class="note">등급 값이 작을수록 밝은 별이에요. 1등급 차이는 약 2.5배(정확히는 약 2.512배)이고, 5등급 차이는 100배예요.</p>
+      </div>
+      <hr>
+      <div>
+        <span class="lbl">스스로 확인하기</span>
+        <div style="margin-top:6px">
+          <details><summary>1. 실제 밝기가 같은 별도 무엇에 따라 밝기가 다르게 보일까요?</summary><p>별까지의 거리</p></details>
+          <details><summary>2. 별까지의 거리가 3배가 되면 밝기는?</summary><p>1/3² = 1/9배로 어두워져요.</p></details>
+          <details><summary>3. 1등급 별은 4등급 별보다 약 몇 배 밝을까요?</summary><p>2.5 × 2.5 × 2.5 ≈ 16배</p></details>
+          <details><summary>4. 별까지의 거리가 10배가 되면 몇 등급 커질까요?</summary><p>1/10² = 1/100로 어두워지므로 5등급 커져요.</p></details>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(()=>{
+if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h){this.rect(x,y,w,h);};
+const TAU=Math.PI*2, STEP=Math.pow(100,1/5), M0=1, MMIN=-1, MMAX=7;
+const st={r:1,ghost:false,A:1,B:6,link:true,dirty:true};
+const $=id=>document.getElementById(id);
+const FONT=()=>getComputedStyle(document.body).fontFamily;
+const dc=$('dist'),mc=$('mag');const D=dc.getContext('2d'),M=mc.getContext('2d');
+let dz={w:1,h:1,d:1},mz={w:1,h:1,d:1};
+function fit(cv){const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.max(1,Math.round(r.height*d));return{w:r.width,h:r.height,d};}
+const ro=new ResizeObserver(()=>{dz=fit(dc);mz=fit(mc);st.dirty=true;});ro.observe(dc);ro.observe(mc);
+let seed=5;const rnd=()=>((seed=(seed*16807)%2147483647)/2147483647);
+const BG1=Array.from({length:160},()=>({x:rnd(),y:rnd(),r:rnd()*1.2+.3,a:rnd()*.5+.2}));
+const BG2=Array.from({length:140},()=>({x:rnd(),y:rnd(),r:rnd()*1.1+.3,a:rnd()*.4+.15}));
+
+function sky(c,w,h,stars){const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#070b1e');g.addColorStop(1,'#121a3e');c.fillStyle=g;c.fillRect(0,0,w,h);
+ for(const s of stars){c.globalAlpha=s.a;c.fillStyle='#fff';c.beginPath();c.arc(s.x*w,s.y*h,s.r,0,TAU);c.fill();}c.globalAlpha=1;}
+function text(c,t,x,y,{size=15,col='#f4ead2',align='center',weight=700,base='middle',stroke=true}={}){c.font=`${weight} ${size}px ${FONT()}`;c.textAlign=align;c.textBaseline=base;if(stroke){c.lineWidth=4;c.strokeStyle='rgba(6,10,28,.85)';c.strokeText(t,x,y);}c.fillStyle=col;c.fillText(t,x,y);}
+function sun(c,x,y,R,k){const g=c.createRadialGradient(x,y,0,x,y,R*2.2);g.addColorStop(0,`rgba(255,250,225,${k})`);g.addColorStop(.22,`rgba(255,214,90,${k})`);g.addColorStop(.45,`rgba(255,170,40,${k*.55})`);g.addColorStop(1,'rgba(255,140,0,0)');c.fillStyle=g;c.beginPath();c.arc(x,y,R*2.2,0,TAU);c.fill();}
+const frac=r=>{const n=Math.round(r);return Math.abs(r-n)<1e-6?(n===1?'1':`1/${n*n}`):(1/(r*r)).toFixed(2);};
+const area=r=>{const n=Math.round(r);return Math.abs(r-n)<1e-6?String(n*n):(r*r).toFixed(1);};
+const appMag=r=>M0+5*Math.log10(r);
+function hull(P){P=P.slice().sort((a,b)=>a.x-b.x||a.y-b.y);const cr=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);const lo=[],up=[];
+ for(const p of P){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p);}
+ for(const p of P.slice().reverse()){while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p);}return lo.slice(0,-1).concat(up.slice(0,-1));}
+
+/* ---------- ① 거리와 밝기 ---------- */
+const L1={};
+function geo1(){const{w,h}=dz;L1.x0=w*.075;L1.cy=h*.53;L1.dx=(w*.79)/4;L1.u=Math.min(h*.075,L1.dx*.2);}
+const px=r=>L1.x0+r*L1.dx;
+function corners(r){const x=px(r),ru=r*L1.u,cy=L1.cy;const P=(y,z)=>({x:x+z*.7,y:cy-y-z*.3});return[P(-ru,-ru),P(ru,-ru),P(ru,ru),P(-ru,ru)];}
+function panel(c,r,alpha,ghost){const C=corners(r),ru=r*L1.u,x=px(r),cy=L1.cy,b=1/(r*r);
+ const P=(y,z)=>({x:x+z*.7,y:cy-y-z*.3});
+ c.beginPath();C.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();
+ c.fillStyle=`rgba(255,${Math.round(170+60*b)},${Math.round(60+60*b)},${(ghost?.35:1)*(.12+.8*b)})`;c.fill();
+ c.strokeStyle=ghost?'rgba(255,214,140,.45)':'rgba(255,228,170,.95)';c.lineWidth=ghost?1.2:2;c.stroke();
+ const cell=2*L1.u;c.strokeStyle=ghost?'rgba(120,70,20,.35)':'rgba(110,60,15,.75)';c.lineWidth=1.2;
+ for(let k=cell;k<2*ru-1;k+=cell){const v=-ru+k;let a=P(v,-ru),bq=P(v,ru);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(bq.x,bq.y);c.stroke();a=P(-ru,v);bq=P(ru,v);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(bq.x,bq.y);c.stroke();}
+ if(!ghost||Math.abs(st.r-r)>.05){const t=r===1?'1배':`${frac(r)}배`;text(c,t,x+.7*ru+8,cy-ru-.3*ru-14,{size:ghost?14:Math.max(16,dz.h*.05),col:ghost?'rgba(255,230,180,.75)':'#ffe7a8',align:'left'});}}
+function drawDist(){const{w,h,d}=dz,c=D;c.setTransform(d,0,0,d,0,0);geo1();sky(c,w,h,BG1);
+ const S={x:L1.x0,y:L1.cy},r=st.r,C=corners(r);
+ // 빛줄기
+ const H=hull([S,...C]);const g=c.createLinearGradient(S.x,0,px(r),0);g.addColorStop(0,'rgba(255,220,130,.42)');g.addColorStop(1,'rgba(255,200,90,.12)');
+ c.beginPath();H.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.fillStyle=g;c.fill();
+ c.strokeStyle='rgba(255,236,190,.55)';c.lineWidth=1;for(const p of C){c.beginPath();c.moveTo(S.x,S.y);c.lineTo(p.x,p.y);c.stroke();}
+ if(st.ghost)for(const q of[1,2,3])if(Math.abs(q-r)>.05&&q<r)panel(c,q,1,true);
+ panel(c,r,1,false);
+ if(st.ghost)for(const q of[1,2,3])if(Math.abs(q-r)>.05&&q>r)panel(c,q,1,true);
+ sun(c,S.x,S.y,Math.max(14,h*.05),1);text(c,'별',S.x,S.y-Math.max(30,h*.1),{size:16});
+ // 거리 눈금
+ const yA=h*.92;c.strokeStyle='rgba(230,225,210,.7)';c.lineWidth=1.5;c.beginPath();c.moveTo(S.x,yA);c.lineTo(px(4)+10,yA);c.stroke();
+ for(const q of[1,2,3,4]){c.beginPath();c.moveTo(px(q),yA-6);c.lineTo(px(q),yA+6);c.stroke();text(c,q===1?'r':q+'r',px(q),yA-16,{size:14,col:'rgba(240,235,220,.9)'});}
+ c.setLineDash([4,4]);c.strokeStyle='rgba(255,228,170,.7)';c.beginPath();c.moveTo(px(r),L1.cy+r*L1.u*1.3+4);c.lineTo(px(r),yA);c.stroke();c.setLineDash([]);
+ c.beginPath();c.arc(px(r),yA,7,0,TAU);c.fillStyle='#ffd27a';c.fill();
+ // 눈에 보이는 별
+ const bx=w-70,by=60,b=1/(r*r);c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.roundRect(bx-58,by-46,116,118,12);c.fill();
+ sun(c,bx,by+4,22,Math.max(.12,Math.sqrt(b)));text(c,'이 거리에서 본 별',bx,by+46,{size:12,weight:500,col:'#e9dfc6'});text(c,`약 ${appMag(r).toFixed(1)}등급`,bx,by+62,{size:14,col:'#ffe7a8'});}
+
+/* ---------- ② 등급과 밝기 ---------- */
+const L2={};
+function geo2(){const{w,h}=mz;L2.l=w*.06;L2.r=w*.06;L2.rowY=h*.40;L2.arcY=h*.20;L2.xY=h*.60;L2.brY=h*.72;L2.trY=h*.88;}
+const mx=m=>L2.l+(MMAX-m)/(MMAX-MMIN)*(mz.w-L2.l-L2.r);
+const invM=x=>MMAX-(x-L2.l)/(mz.w-L2.l-L2.r)*(MMAX-MMIN);
+const starR=m=>7+27*Math.pow(Math.pow(STEP,-(m+1)),.3);
+function fmtX(n){const v=Math.pow(STEP,n);return v<10?v.toFixed(1):v<1000?String(Math.round(v)):Math.round(v).toLocaleString('ko-KR');}
+function drawMag(){const{w,h,d}=mz,c=M;c.setTransform(d,0,0,d,0,0);geo2();sky(c,w,h,BG2);
+ const fs=Math.max(13,Math.min(17,w/70)),A=getComputedStyle(document.documentElement);
+ const colA='#f5a524',colB='#2dd4bf';
+ // 약 2.5배 화살표 (어두운 쪽 → 밝은 쪽)
+ for(let m=MMAX;m>MMIN;m--){const x1=mx(m)+starR(m)*.6,x2=mx(m-1)-starR(m-1)*.6,y=L2.rowY-starR(m-1)*.4-10,top=L2.arcY+8;
+  c.beginPath();c.moveTo(x1,L2.rowY-starR(m)*.6);c.quadraticCurveTo((x1+x2)/2,top-8,x2,y);c.strokeStyle='rgba(160,170,255,.75)';c.lineWidth=2.2;c.stroke();
+  const ang=Math.atan2(y-(top-8),x2-(x1+x2)/2);c.beginPath();c.moveTo(x2,y);c.lineTo(x2-9*Math.cos(ang-.45),y-9*Math.sin(ang-.45));c.lineTo(x2-9*Math.cos(ang+.45),y-9*Math.sin(ang+.45));c.closePath();c.fillStyle='rgba(160,170,255,.9)';c.fill();
+  if(w>=700)text(c,'약 2.5배',(x1+x2)/2,top-18,{size:fs*.82,weight:500,col:'#d6dbff'});}
+ if(w<700)text(c,'화살표 한 칸 = 약 2.5배',w/2,L2.arcY-14,{size:fs*.85,weight:500,col:'#d6dbff'});
+ // 별
+ for(let m=MMIN;m<=MMAX;m++){const x=mx(m),R=starR(m);sun(c,x,L2.rowY,R,1);
+  c.beginPath();c.arc(x,L2.rowY,Math.max(15,R*.55),0,TAU);c.fillStyle='rgba(255,226,140,.9)';c.fill();text(c,`${m}`,x,L2.rowY+1,{size:fs*1.05,col:'#4a2e02',stroke:false});
+  text(c,'등급',x,L2.rowY+Math.max(15,R*.55)+14,{size:fs*.75,weight:500,col:'#efe4c8'});
+  for(const[k,col]of[['A',colA],['B',colB]])if(st[k]===m){c.beginPath();c.arc(x,L2.rowY,Math.max(15,R*.55)+7,0,TAU);c.strokeStyle=col;c.lineWidth=3.5;c.stroke();}}
+ // ①의 별
+ if(st.link){const m=appMag(st.r),x=mx(m);text(c,'①의 별',L2.l-4,L2.xY,{size:fs*.8,align:'left',weight:500,col:'#e9dfc6'});
+  c.strokeStyle='rgba(255,230,170,.25)';c.lineWidth=1;c.setLineDash([3,5]);c.beginPath();c.moveTo(L2.l+46,L2.xY);c.lineTo(w-L2.r,L2.xY);c.stroke();c.setLineDash([]);
+  sun(c,x,L2.xY,starR(m)*.7,1);c.beginPath();c.arc(x,L2.xY,10,0,TAU);c.strokeStyle='#ffe7a8';c.lineWidth=2;c.stroke();text(c,`${m.toFixed(1)}등급 (${st.r===1?'r':(Math.round(st.r*10)/10)+'r'})`,x,L2.xY-22,{size:fs*.82,col:'#ffe7a8'});}
+ // A–B 괄호
+ const xa=mx(st.A),xb=mx(st.B),lo=Math.min(xa,xb),hi=Math.max(xa,xb),n=Math.abs(st.A-st.B);
+ if(n>0){c.strokeStyle='#efe4c8';c.lineWidth=1.8;c.beginPath();c.moveTo(lo,L2.brY-8);c.lineTo(lo,L2.brY);c.lineTo(hi,L2.brY);c.lineTo(hi,L2.brY-8);c.stroke();
+  const t=`${n}등급 차이 → 약 ${fmtX(n)}배`;c.font=`700 ${fs}px ${FONT()}`;const tw=c.measureText(t).width+20;c.fillStyle='#121a3e';c.fillRect((lo+hi)/2-tw/2,L2.brY-12,tw,24);text(c,t,(lo+hi)/2,L2.brY,{size:fs,col:'#ffffff'});}
+ // 손잡이 트랙
+ c.strokeStyle='rgba(230,225,210,.35)';c.lineWidth=2;c.beginPath();c.moveTo(mx(MMAX),L2.trY);c.lineTo(mx(MMIN),L2.trY);c.stroke();
+ text(c,'◀ 어둡다',L2.l-6,L2.trY+24,{size:fs*.8,align:'left',weight:500,col:'#c9c0aa'});text(c,'밝다 ▶',w-L2.r+6,L2.trY+24,{size:fs*.8,align:'right',weight:500,col:'#ffe7a8'});
+ const handle=(k,col)=>{const x=mx(st[k]);c.beginPath();c.arc(x,L2.trY,15,0,TAU);c.fillStyle=col;c.fill();c.strokeStyle='#fff';c.lineWidth=2;c.stroke();text(c,k,x,L2.trY+1,{size:16,col:'#ffffff'});
+  c.setLineDash([3,4]);c.strokeStyle=col;c.lineWidth=1.5;c.beginPath();c.moveTo(x,L2.trY-16);c.lineTo(x,L2.rowY+starR(st[k])*.55+22);c.stroke();c.setLineDash([]);};
+ if(st.A===st.B){handle('B',colB);handle('A',colA);}else{handle('A',colA);handle('B',colB);}}
+
+/* ---------- UI ---------- */
+function sync(){const r=st.r,isInt=Math.abs(r-Math.round(r))<1e-6;
+ $('rV').textContent=isInt?(r===1?'1r':Math.round(r)+'r'):r.toFixed(1)+'r';$('aV').textContent=area(r)+'배';$('bV').textContent=frac(r)+'배';$('r').value=r;
+ $('aM').textContent=st.A+'등급';$('bM').textContent=st.B+'등급';
+ const n=Math.abs(st.A-st.B);
+ if(!n){$('cmp').textContent='A와 B는 밝기가 같아요';$('expr').textContent='등급이 같으면 밝기도 같아요';}
+ else{const br=st.A<st.B?'A':'B',dm=st.A<st.B?'B':'A';$('cmp').textContent=`${br}가 ${dm}보다 약 ${fmtX(n)}배 밝아요`;
+  $('expr').textContent=n<=5?Array(n).fill('2.5').join(' × ')+` ≈ ${fmtX(n)}`:`2.5를 ${n}번 곱한 값 ≈ ${fmtX(n)}`;}
+ $('aMinus').disabled=st.A<=MMIN;$('aPlus').disabled=st.A>=MMAX;$('bMinus').disabled=st.B<=MMIN;$('bPlus').disabled=st.B>=MMAX;
+ $('ghost').setAttribute('aria-pressed',st.ghost);$('link').setAttribute('aria-pressed',st.link);st.dirty=true;}
+const snap=v=>{const n=Math.round(v);return Math.abs(v-n)<.07?n:v;};
+$('r').addEventListener('input',e=>{st.r=snap(+e.target.value);sync();});
+$('ghost').onclick=()=>{st.ghost=!st.ghost;sync();};
+$('link').onclick=()=>{st.link=!st.link;sync();};
+$('aMinus').onclick=()=>{st.A=Math.max(MMIN,st.A-1);sync();};$('aPlus').onclick=()=>{st.A=Math.min(MMAX,st.A+1);sync();};
+$('bMinus').onclick=()=>{st.B=Math.max(MMIN,st.B-1);sync();};$('bPlus').onclick=()=>{st.B=Math.min(MMAX,st.B+1);sync();};
+$('reset').onclick=()=>{Object.assign(st,{r:1,ghost:false,A:1,B:6,link:true});sync();};
+
+let d1=false;
+const setR=e=>{const b=dc.getBoundingClientRect();geo1();st.r=snap(Math.max(1,Math.min(4,(e.clientX-b.left-L1.x0)/L1.dx)));sync();};
+dc.addEventListener('pointerdown',e=>{d1=true;dc.setPointerCapture(e.pointerId);setR(e);});
+dc.addEventListener('pointermove',e=>{if(d1)setR(e);});
+dc.addEventListener('pointerup',()=>d1=false);dc.addEventListener('pointercancel',()=>d1=false);
+
+let d2=null;
+mc.addEventListener('pointerdown',e=>{const b=mc.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;geo2();
+ const m=Math.max(MMIN,Math.min(MMAX,Math.round(invM(x))));
+ if(Math.abs(y-L2.trY)<30){d2=Math.abs(mx(st.A)-x)<=Math.abs(mx(st.B)-x)?'A':'B';}
+ else{d2=Math.abs(mx(st.A)-x)<=Math.abs(mx(st.B)-x)?'A':'B';}
+ if(st.A===st.B&&m<st.A)d2='A';if(st.A===st.B&&m>st.B)d2='B';
+ mc.setPointerCapture(e.pointerId);st[d2]=m;sync();});
+mc.addEventListener('pointermove',e=>{if(!d2)return;const b=mc.getBoundingClientRect();st[d2]=Math.max(MMIN,Math.min(MMAX,Math.round(invM(e.clientX-b.left))));sync();});
+mc.addEventListener('pointerup',()=>d2=null);mc.addEventListener('pointercancel',()=>d2=null);
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SUMMARY')return;
+ if(e.key==='ArrowRight'){st.r=snap(Math.min(4,st.r+.1));sync();e.preventDefault();}else if(e.key==='ArrowLeft'){st.r=snap(Math.max(1,st.r-.1));sync();e.preventDefault();}
+ else if(e.key==='f'||e.key==='F')toggleFS();});
+
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3500);}
+const fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+async function toggleFS(){try{if(fsEl()){await(document.exitFullscreen?document.exitFullscreen():document.webkitExitFullscreen());}
+ else{const el=document.documentElement;if(el.requestFullscreen)await el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();else throw new Error('no');}}
+ catch(err){toast('이 화면에서는 전체 화면을 열 수 없어요. 브라우저에서 F11 키를 눌러 주세요.');}}
+$('fsBtn').onclick=toggleFS;
+const fsChange=()=>{const on=!!fsEl();$('fsLabel').textContent=on?'전체 화면 끝내기':'전체 화면';$('fsIcon').setAttribute('d',on?'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5':'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');};
+document.addEventListener('fullscreenchange',fsChange);document.addEventListener('webkitfullscreenchange',fsChange);
+
+function loop(){if(st.dirty&&dz.w>1){drawDist();drawMag();st.dirty=false;}requestAnimationFrame(loop);}
+dz=fit(dc);mz=fit(mc);sync();requestAnimationFrame(loop);
+if(document.fonts)document.fonts.ready.then(()=>{st.dirty=true;});
+})();
+</script>
+
+</body>
+</html>
