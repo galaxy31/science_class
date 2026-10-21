@@ -64,11 +64,14 @@ input[type=range]{width:100%;height:36px;accent-color:var(--accent);margin:0}
 .facts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:15px}
 .facts li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:5px}
 .facts li span:last-child{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.graph{position:relative;height:170px;flex:none}
+.graph canvas{position:absolute;inset:0;width:100%;height:100%}
+.src{margin:0;font-size:12px;color:var(--muted)}
 .callout{background:var(--chip);border-radius:10px;padding:10px 12px;font-size:15px}
 table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
 th{font-size:12px;color:var(--muted);text-align:right;font-weight:700;padding:4px 4px}
 th:first-child,td:first-child{text-align:left}
-td{padding:5px 4px;text-align:right;border-top:1px solid var(--line)}
+td{white-space:nowrap;padding:5px 4px;text-align:right;border-top:1px solid var(--line)}
 tr.pl{cursor:pointer}
 tr.pl.sel td{background:var(--chip);font-weight:700}
 .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:0}
@@ -112,7 +115,7 @@ hr{border:0;border-top:1px solid var(--line);margin:0}
         <div class="big" id="clkBig">0년</div>
         <div class="sub" id="clkSub">태양계가 은하 중심을 0.00바퀴 돌았어요</div>
       </div>
-      <div class="note" id="note">은하 전체가 함께 도는 것처럼 단순하게 나타냈어요. 실제로는 위치마다 도는 빠르기가 조금씩 달라요.</div>
+      <div class="note" id="note"></div>
     </section>
 
     <aside>
@@ -132,14 +135,28 @@ hr{border:0;border-top:1px solid var(--line);margin:0}
         </div>
         <hr>
         <div class="sec">
+          <span class="lbl">거리마다 다른 회전 (회전 곡선)</span>
+          <button type="button" id="gTrace" aria-pressed="true">같은 줄에서 출발한 별 보기</button>
+          <div class="graph"><canvas id="rc" aria-label="우리 은하의 회전 곡선 그래프"></canvas></div>
+          <table>
+            <thead><tr><th>중심에서</th><th>속도<br>(km/s)</th><th>한 바퀴</th><th>돈<br>바퀴</th></tr></thead>
+            <tbody id="trRows"></tbody>
+          </table>
+          <div class="callout">바깥쪽 별도 속도는 안쪽과 비슷하지만, 돌아야 할 길이 훨씬 길어서 한 바퀴 도는 데 더 오래 걸려요. 그래서 안쪽 별이 바깥쪽 별을 앞질러 가요.</div>
+        </div>
+        <hr>
+        <div class="sec">
           <span class="lbl">우리 은하 알아보기</span>
           <ul class="facts">
             <li><span>지름</span><span>약 30 kpc (10만 광년)</span></li>
             <li><span>은하 중심 ~ 태양계</span><span>약 8.5 kpc (3만 광년)</span></li>
-            <li><span>태양계가 한 바퀴 도는 데</span><span>약 2억 2,500만 년</span></li>
-            <li><span>태양계가 도는 빠르기</span><span>약 220 km/s</span></li>
+            <li><span>태양계가 한 바퀴 도는 데</span><span id="fSunP">약 2억 2,900만 년</span></li>
+            <li><span>태양계가 도는 빠르기</span><span id="fSunV">약 228 km/s</span></li>
+            <li><span>막대 무늬가 한 바퀴 도는 데</span><span id="fBarP">약 1억 6,400만 년</span></li>
+            <li><span>나선팔 무늬가 한 바퀴 도는 데</span><span id="fArmP">약 2억 6,700만 년</span></li>
           </ul>
           <div class="callout" id="gFact">태양계가 생긴 뒤(약 46억 년) 지금까지 은하 중심을 약 20바퀴 돌았어요.</div>
+          <p class="src">자료: 회전 속도 Eilers 외(2019, 5~25 kpc), Sofue(2013, 5 kpc 안쪽) · 무늬의 회전 Shen &amp; Zheng(2020)</p>
         </div>
       </div>
 
@@ -174,11 +191,11 @@ hr{border:0;border-top:1px solid var(--line);margin:0}
 const TAU=Math.PI*2,D2R=Math.PI/180;
 const $=id=>document.getElementById(id);
 const FONT=()=>getComputedStyle(document.body).fontFamily;
-const PITCH=15*D2R,GAL_YEAR=2.25e8, SUN_KPC=8.5, GAL_R_KPC=15, SUN_ANG=180*D2R, BAR_ANG=44*D2R;
+const PITCH=15*D2R, SUN_KPC=8.5, GAL_R_KPC=15, SUN_ANG=180*D2R, BAR_ANG=44*D2R;
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const st={view:'galaxy',trans:null,dirty:true,
-  g:{t:0,play:true,lg:7,sun:true},
+  g:{t:0,play:true,lg:7,sun:true,trace:true},
   s:{d:0,play:true,lg:1.477,names:true,zoom:false,sel:'earth'}};
 
 /* ---------- 유틸 ---------- */
@@ -191,38 +208,57 @@ function fmtRate(y){if(y>=1e8)return(y/1e8>=10?nf(y/1e8):(Math.round(y/1e7)/10))
 function fmtDays(d){if(d<1.5)return'1일';if(d<45)return Math.round(d)+'일';if(d<365*1.5)return Math.round(d/30.44)+'개월';const y=d/365.25;return(y<10?Math.round(y*10)/10:nf(y))+'년';}
 function text(c,t,x,y,{size=15,col='#ffffff',align='center',weight=700,base='middle'}={}){c.font=`${weight} ${size}px ${FONT()}`;c.textAlign=align;c.textBaseline=base;c.lineWidth=4;c.strokeStyle='rgba(0,0,0,.85)';c.strokeText(t,x,y);c.fillStyle=col;c.fillText(t,x,y);}
 
-/* ---------- 은하 미리 그리기 ---------- */
-const GS=1400,gal=document.createElement('canvas');gal.width=gal.height=GS;
-(function build(){const c=gal.getContext('2d'),cx=GS/2,cy=GS/2,R=GS*.42;
- let g=c.createRadialGradient(cx,cy,0,cx,cy,R*1.06);
- g.addColorStop(0,'rgba(255,238,210,.95)');g.addColorStop(.1,'rgba(235,222,205,.62)');g.addColorStop(.3,'rgba(170,182,222,.4)');g.addColorStop(.65,'rgba(120,136,190,.24)');g.addColorStop(.9,'rgba(70,84,135,.08)');g.addColorStop(1,'rgba(0,0,0,0)');
+/* ---------- 회전 곡선 (실제 관측 자료) ----------
+ * 5 kpc 바깥: Eilers 외(2019) — 태양(8.122 kpc)에서 229 km/s, 1 kpc마다 1.7 km/s씩 감소
+ * 5 kpc 안쪽: Sofue(2013) 회전 곡선 표의 모양을 V0=229 km/s에 맞춰 줄임 (0.38 kpc 부근 최고, 1.6 kpc 부근 오목)
+ * 무늬의 회전: 막대 약 37.5 km/s/kpc, 나선팔 약 23 km/s/kpc (Shen & Zheng 2020 리뷰)
+ */
+const RCI=[[0,0],[.1,150],[.2,215],[.38,252],[.66,236],[1.6,205],[2.6,206],[3.6,210],[5,234.3]];
+function vcirc(r){if(r>=5)return 229-1.7*(r-8.122);for(let i=1;i<RCI.length;i++)if(r<=RCI[i][0]){const[a,va]=RCI[i-1],[b,vb]=RCI[i];return va+(vb-va)*(r-a)/(b-a);}return 0;}
+const KK=1.0227e-9; // 1 km/s/kpc = 1.0227 라디안/10억 년
+const omega=r=>vcirc(Math.max(r,.03))/Math.max(r,.03)*KK;
+const OM_BAR=37.5*KK, OM_ARM=23*KK, GAL_YEAR=TAU/omega(SUN_KPC);
+const TRACE=[{r:2,col:'#ffb36b'},{r:4,col:'#ffe27a'},{r:6,col:'#9df08a'},{r:8.5,col:'#ff4a3d',sun:true},{r:11,col:'#7ad6ff'},{r:14,col:'#c49bff'}];
+
+/* ---------- 은하 미리 그리기: 원반(고정) · 나선팔 무늬 · 막대 무늬 ---------- */
+const GS=1400,KPC=GS*.42/15;
+const mk=()=>{const k=document.createElement('canvas');k.width=k.height=GS;return k;};
+const diskL=mk(),armL=mk(),BS=Math.ceil(12*KPC),barL=document.createElement('canvas');barL.width=barL.height=BS;
+(function build(){const cx=GS/2,cy=GS/2,R=GS*.42;let c=diskL.getContext('2d'),g;
+ g=c.createRadialGradient(cx,cy,0,cx,cy,R*1.06);
+ g.addColorStop(0,'rgba(255,238,210,.9)');g.addColorStop(.1,'rgba(235,222,205,.55)');g.addColorStop(.3,'rgba(170,182,222,.34)');g.addColorStop(.65,'rgba(120,136,190,.2)');g.addColorStop(.9,'rgba(70,84,135,.07)');g.addColorStop(1,'rgba(0,0,0,0)');
  c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*1.06,0,TAU);c.fill();
- c.globalCompositeOperation='lighter';
- // 원반의 흩어진 별
- for(let i=0;i<26000;i++){const r=Math.min(R*1.02,-Math.log(1-rnd()*.985)*R*.33),a=rnd()*TAU;c.fillStyle=`rgba(200,212,255,${.12+rnd()*.22})`;const s=rnd()<.9?1:1.6;c.fillRect(cx+r*Math.cos(a),cy+r*Math.sin(a),s,s);}
- // 나선팔: 바깥으로 갈수록 시계 반대 방향으로 감김(시계 방향 회전에서 뒤따르는 팔)
+ g=c.createRadialGradient(cx,cy,0,cx,cy,R*.13);g.addColorStop(0,'rgba(255,252,240,1)');g.addColorStop(.4,'rgba(255,230,190,.6)');g.addColorStop(1,'rgba(255,210,160,0)');c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*.13,0,TAU);c.fill();
+ // 나선팔 무늬: 가스·먼지·젊은 별 (바깥으로 갈수록 시계 반대 방향으로 감김 → 시계 방향 회전에서 뒤따르는 팔)
+ c=armL.getContext('2d');c.globalCompositeOperation='lighter';
  const b=Math.tan(PITCH);
- const ARMS=[{a0:BAR_ANG,r0:.25,n:30000,w:1},{a0:BAR_ANG+Math.PI,r0:.25,n:30000,w:1},{a0:BAR_ANG+Math.PI/2,r0:.32,n:15000,w:.8},{a0:BAR_ANG-Math.PI/2,r0:.32,n:15000,w:.8}];
+ const ARMS=[{a0:BAR_ANG,r0:.25,n:22000,w:1},{a0:BAR_ANG+Math.PI,r0:.25,n:22000,w:1},{a0:BAR_ANG+Math.PI/2,r0:.32,n:11000,w:.8},{a0:BAR_ANG-Math.PI/2,r0:.32,n:11000,w:.8}];
  const armPt=(A,s,off)=>{const r=A.r0*R*Math.exp(s*Math.log(1.02/A.r0)),th=A.a0-Math.log(r/(A.r0*R))/b,rr=r+off;return{x:cx+rr*Math.cos(th),y:cy+rr*Math.sin(th),r};};
  const blob=document.createElement('canvas');blob.width=blob.height=64;{const bc=blob.getContext('2d'),bg=bc.createRadialGradient(32,32,0,32,32,32);bg.addColorStop(0,'rgba(190,210,255,1)');bg.addColorStop(1,'rgba(190,210,255,0)');bc.fillStyle=bg;bc.fillRect(0,0,64,64);}
- for(const A of ARMS)for(let i=0;i<A.n/8;i++){const s=Math.pow(rnd(),.85),wd=(R*.022+R*.045*s)*A.w,p=armPt(A,s,gauss()*wd*.8),z=R*(.025+.035*s);c.globalAlpha=.013*A.w;c.drawImage(blob,p.x-z,p.y-z,2*z,2*z);}
- c.globalAlpha=1;
- const dust=[],hii=[];
+ for(const A of ARMS)for(let i=0;i<A.n/7;i++){const s=Math.pow(rnd(),.85),wd=(R*.022+R*.045*s)*A.w,p=armPt(A,s,gauss()*wd*.8),z=R*(.025+.035*s);c.globalAlpha=.014*A.w;c.drawImage(blob,p.x-z,p.y-z,2*z,2*z);}
+ c.globalAlpha=1;const dust=[],hii=[];
  for(const A of ARMS)for(let i=0;i<A.n;i++){const s=Math.pow(rnd(),.85),wd=(R*.02+R*.042*s)*A.w,o=gauss()*wd,p=armPt(A,s,o);
-  const k=rnd();if(k<.06){c.fillStyle=`rgba(160,200,255,${.6+rnd()*.4})`;c.fillRect(p.x,p.y,2,2);}
-  else{c.fillStyle=`rgba(${215+rnd()*40|0},${222+rnd()*30|0},255,${.25+rnd()*.45})`;c.fillRect(p.x,p.y,1.3,1.3);}
+  if(rnd()<.08){c.fillStyle=`rgba(160,200,255,${.6+rnd()*.4})`;c.fillRect(p.x,p.y,2,2);}
+  else{c.fillStyle=`rgba(${215+rnd()*40|0},${222+rnd()*30|0},255,${.18+rnd()*.35})`;c.fillRect(p.x,p.y,1.3,1.3);}
   if(rnd()<.35)dust.push(armPt(A,s,-wd*.9+gauss()*wd*.35));
   if(rnd()<.012&&s>.08)hii.push(armPt(A,s,gauss()*wd*.5));}
  c.globalCompositeOperation='source-over';
- for(const p of dust){c.fillStyle=`rgba(${70+rnd()*30|0},${30+rnd()*15|0},${25|0},${.12+rnd()*.16})`;c.fillRect(p.x,p.y,2.2,2.2);}
+ for(const p of dust){c.fillStyle=`rgba(${70+rnd()*30|0},${30+rnd()*15|0},25,${.12+rnd()*.16})`;c.fillRect(p.x,p.y,2.2,2.2);}
  c.globalCompositeOperation='lighter';
  for(const p of hii){const r=2+rnd()*4,hg=c.createRadialGradient(p.x,p.y,0,p.x,p.y,r);hg.addColorStop(0,'rgba(255,140,190,.9)');hg.addColorStop(1,'rgba(255,60,120,0)');c.fillStyle=hg;c.beginPath();c.arc(p.x,p.y,r,0,TAU);c.fill();}
- // 막대와 중심부
- c.save();c.translate(cx,cy);c.rotate(BAR_ANG);c.scale(1,.36);g=c.createRadialGradient(0,0,0,0,0,R*.3);g.addColorStop(0,'rgba(255,240,205,.95)');g.addColorStop(.5,'rgba(250,215,160,.55)');g.addColorStop(1,'rgba(240,190,130,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,R*.3,0,TAU);c.fill();c.restore();
- g=c.createRadialGradient(cx,cy,0,cx,cy,R*.13);g.addColorStop(0,'rgba(255,252,240,1)');g.addColorStop(.4,'rgba(255,230,190,.6)');g.addColorStop(1,'rgba(255,210,160,0)');c.fillStyle=g;c.beginPath();c.arc(cx,cy,R*.13,0,TAU);c.fill();
- for(let i=0;i<5000;i++){const x=gauss()*R*.11,y=gauss()*R*.04,ca=Math.cos(BAR_ANG),sa=Math.sin(BAR_ANG);c.fillStyle=`rgba(255,${225+rnd()*25|0},${180+rnd()*40|0},${.15+rnd()*.3})`;c.fillRect(cx+x*ca-y*sa,cy+x*sa+y*ca,1.3,1.3);}
- c.globalCompositeOperation='source-over';
- build.armPt=armPt;build.ARM=ARMS[1];})();
+ // 막대 무늬 (반쪽 길이 약 5 kpc)
+ c=barL.getContext('2d');c.globalCompositeOperation='lighter';{const cx=BS/2,cy=BS/2;
+ c.save();c.translate(cx,cy);c.rotate(BAR_ANG);c.scale(1,.34);g=c.createRadialGradient(0,0,0,0,0,5*KPC);g.addColorStop(0,'rgba(255,240,205,.9)');g.addColorStop(.5,'rgba(250,215,160,.5)');g.addColorStop(1,'rgba(240,190,130,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,5*KPC,0,TAU);c.fill();c.restore();
+ for(let i=0;i<5000;i++){const x=gauss()*R*.11,y=gauss()*R*.04,ca=Math.cos(BAR_ANG),sa=Math.sin(BAR_ANG);c.fillStyle=`rgba(255,${225+rnd()*25|0},${180+rnd()*40|0},${.15+rnd()*.3})`;c.fillRect(cx+x*ca-y*sa,cy+x*sa+y*ca,1.3,1.3);}}
+})();
+function armLabelPt(s){const b=Math.tan(PITCH),A={a0:BAR_ANG+Math.PI,r0:.25},r=A.r0*Math.exp(s*Math.log(1.02/A.r0)),th=A.a0-Math.log(r/A.r0)/b;return{r,th};}
+
+/* ---------- 원반의 별: 하나하나가 자기 거리의 회전 속도로 돎 ---------- */
+const STARS=[];
+const BUCK=['rgba(205,215,255,.6)','rgba(225,232,255,.8)','rgba(255,236,205,.45)','rgba(255,214,170,.55)','rgba(170,200,255,.9)'];
+for(let i=0;i<9000;i++){let r;if(rnd()<.08){r=Math.abs(gauss())*1.2;}else{do{r=-Math.log(1-rnd())*3.2;}while(r>15.6);}
+ const k=r<2.2?(rnd()<.6?2:3):(rnd()<.08?4:rnd()<.5?0:1);STARS.push({r,th:rnd()*TAU,om:omega(r),k,s:rnd()<.85?1.3:2});}
+const BYK=BUCK.map((_,k)=>STARS.filter(s=>s.k===k));
 const BG=Array.from({length:420},()=>({x:rnd(),y:rnd(),r:rnd()*1.1+.25,a:rnd()*.55+.15}));
 function starfield(c,w,h){c.fillStyle='#02030a';c.fillRect(0,0,w,h);for(const s of BG){c.globalAlpha=s.a;c.fillStyle='#fff';c.beginPath();c.arc(s.x*w,s.y*h,s.r,0,TAU);c.fill();}c.globalAlpha=1;}
 
@@ -233,16 +269,29 @@ function fit(){const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelR
 new ResizeObserver(fit).observe(cv);
 
 function galGeo(){const{w,h}=Z,top=w<600?100:40,bot=w<600?44:74,R=Math.min(w*.46,(h-top-bot-4)/2);return{cx:w/2,cy:Math.min(h-bot-R,Math.max(R+top,h/2-14)),R};}
-function galAngle(){return TAU*st.g.t/GAL_YEAR;}
-function sunPos(){const G=galGeo(),a=SUN_ANG+galAngle(),r=SUN_KPC/GAL_R_KPC*G.R;return{x:G.cx+r*Math.cos(a),y:G.cy+r*Math.sin(a)};}
-
-function drawGalaxy(c){const{w,h,d}=Z;c.setTransform(d,0,0,d,0,0);starfield(c,w,h);const G=galGeo(),ang=galAngle(),fs=Math.max(14,Math.min(20,w/60));
- const S=G.R/.42;c.save();c.translate(G.cx,G.cy);c.rotate(ang);c.drawImage(gal,-S/2,-S/2,S,S);c.restore();
+function sunPos(){const G=galGeo(),a=SUN_ANG+omega(SUN_KPC)*st.g.t,r=SUN_KPC/GAL_R_KPC*G.R;return{x:G.cx+r*Math.cos(a),y:G.cy+r*Math.sin(a)};}
+const bgC=document.createElement('canvas');let bgKey='';
+function galBg(){const key=cv.width+'x'+cv.height;if(key===bgKey)return bgC;bgKey=key;bgC.width=cv.width;bgC.height=cv.height;const c=bgC.getContext('2d'),{w,h,d}=Z,G=galGeo(),S=G.R/.42;c.setTransform(d,0,0,d,0,0);starfield(c,w,h);c.drawImage(diskL,G.cx-S/2,G.cy-S/2,S,S);return bgC;}
+function drawGalaxy(c){const{w,h,d}=Z;c.setTransform(1,0,0,1,0,0);c.drawImage(galBg(),0,0);c.setTransform(d,0,0,d,0,0);const G=galGeo(),t=st.g.t,fs=Math.max(14,Math.min(20,w/60)),S=G.R/.42,k=G.R/15;
+ const aArm=OM_ARM*t,aBar=OM_BAR*t;
+ c.save();c.translate(G.cx,G.cy);c.rotate(aArm);c.drawImage(armL,-S/2,-S/2,S,S);c.restore();
+ // 별: 거리마다 다른 빠르기
+ c.save();c.globalCompositeOperation='lighter';
+ BYK.forEach((arr,i)=>{c.fillStyle=BUCK[i];c.beginPath();for(const p of arr){const a=p.th+p.om*t,rr=p.r*k;c.rect(G.cx+rr*Math.cos(a),G.cy+rr*Math.sin(a),p.s,p.s);}c.fill();});
+ c.restore();
+ {const bs=BS*S/GS;c.save();c.translate(G.cx,G.cy);c.rotate(aBar);c.drawImage(barL,-bs/2,-bs/2,bs,bs);c.restore();}
+ // 같은 줄에서 출발한 별
+ if(st.g.trace){const x0=G.cx+Math.cos(SUN_ANG)*15.3*k,y0=G.cy+Math.sin(SUN_ANG)*15.3*k;c.setLineDash([3,5]);c.strokeStyle='rgba(255,255,255,.55)';c.lineWidth=1.3;c.beginPath();c.moveTo(G.cx,G.cy);c.lineTo(x0,y0);c.stroke();c.setLineDash([]);
+  text(c,'출발선',x0+4,y0-14,{size:fs*.8,weight:500,col:'rgba(235,240,255,.85)',align:'left'});
+  for(const T of TRACE){if(T.sun&&st.g.sun)continue;const a=SUN_ANG+omega(T.r)*t,x=G.cx+T.r*k*Math.cos(a),y=G.cy+T.r*k*Math.sin(a);
+   c.beginPath();c.arc(G.cx,G.cy,T.r*k,a-.35,a);c.strokeStyle=T.col;c.globalAlpha=.55;c.lineWidth=2.5;c.stroke();c.globalAlpha=1;
+   c.beginPath();c.arc(x,y,6,0,TAU);c.fillStyle=T.col;c.fill();c.strokeStyle='#fff';c.lineWidth=1.5;c.stroke();
+   text(c,T.r+' kpc',x+(Math.cos(a)>=0?10:-10),y-12,{size:fs*.78,col:T.col,align:Math.cos(a)>=0?'left':'right'});}}
  // 은하 중심
- text(c,'은하 중심',G.cx+G.R*.42,G.cy-G.R*.02,{size:fs,align:'left'});c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1.3;c.beginPath();c.moveTo(G.cx+4,G.cy);c.lineTo(G.cx+G.R*.4,G.cy-G.R*.02);c.stroke();
- // 나선팔 (함께 돎)
- {const p0=build_armPt(.62),ca=Math.cos(ang),sa=Math.sin(ang),x=G.cx+(p0.x*ca-p0.y*sa)*G.R,y=G.cy+(p0.x*sa+p0.y*ca)*G.R,dx=x>G.cx?1:-1;
-  c.beginPath();c.moveTo(x,y);c.lineTo(x+dx*60,y-24);c.stroke();text(c,'나선팔',x+dx*66,y-24,{size:fs,align:dx>0?'left':'right'});}
+ c.strokeStyle='rgba(255,255,255,.8)';c.lineWidth=1.3;c.beginPath();c.moveTo(G.cx+4,G.cy);c.lineTo(G.cx+G.R*.4,G.cy-G.R*.02);c.stroke();text(c,'은하 중심',G.cx+G.R*.42,G.cy-G.R*.02,{size:fs,align:'left'});
+ // 나선팔 (무늬와 함께 돎)
+ {const p0=armLabelPt(.62),a=p0.th+aArm,rr=p0.r*G.R,x=G.cx+rr*Math.cos(a),y=G.cy+rr*Math.sin(a),dx=x>G.cx?1:-1;
+  c.strokeStyle='rgba(255,255,255,.8)';c.beginPath();c.moveTo(x,y);c.lineTo(x+dx*60,y-24);c.stroke();text(c,'나선팔',x+dx*66,y-24,{size:fs,align:dx>0?'left':'right'});}
  // 태양계
  if(st.g.sun){const p=sunPos();c.setLineDash([6,5]);c.strokeStyle='rgba(255,230,140,.85)';c.lineWidth=1.6;c.beginPath();c.moveTo(G.cx,G.cy);c.lineTo(p.x,p.y);c.stroke();c.setLineDash([]);
   const ux=(p.x-G.cx),uy=(p.y-G.cy),ul=Math.hypot(ux,uy)||1,nx=-uy/ul,ny=ux/ul,sg=ny<0?1:-1;
@@ -253,8 +302,20 @@ function drawGalaxy(c){const{w,h,d}=Z;c.setTransform(d,0,0,d,0,0);starfield(c,w,
  // 축척
  const y=G.cy+G.R+24;c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=1.5;c.beginPath();c.moveTo(G.cx-G.R,y);c.lineTo(G.cx+G.R,y);c.stroke();
  for(const sx of[-1,1]){c.beginPath();c.moveTo(G.cx+sx*G.R,y-7);c.lineTo(G.cx+sx*G.R,y+7);c.stroke();}
- const t='30 kpc (10만 광년)';c.font=`700 ${fs*.9}px ${FONT()}`;const tw=c.measureText(t).width+16;c.fillStyle='#02030a';c.fillRect(G.cx-tw/2,y-10,tw,20);text(c,t,G.cx,y,{size:fs*.9});}
-function build_armPt(s){const b=Math.tan(PITCH),A={a0:BAR_ANG+Math.PI,r0:.25},r=A.r0*Math.exp(s*Math.log(1.02/A.r0)),th=A.a0-Math.log(r/A.r0)/b;return{x:r*Math.cos(th),y:r*Math.sin(th)};}
+ const tt='30 kpc (10만 광년)';c.font=`700 ${fs*.9}px ${FONT()}`;const tw=c.measureText(tt).width+16;c.fillStyle='#02030a';c.fillRect(G.cx-tw/2,y-10,tw,20);text(c,tt,G.cx,y,{size:fs*.9});}
+
+/* ---------- 회전 곡선 그래프 ---------- */
+const gc=$('rc'),GX=gc.getContext('2d');let GZ={w:1,h:1,d:1};
+new ResizeObserver(()=>{const r=gc.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);gc.width=Math.max(1,Math.round(r.width*d));gc.height=Math.max(1,Math.round(r.height*d));GZ={w:r.width,h:r.height,d};drawRC();}).observe(gc);
+function drawRC(){const{w,h,d}=GZ,c=GX;if(w<2)return;c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),mut=cs.getPropertyValue('--muted').trim(),ln=cs.getPropertyValue('--line').trim(),f=FONT();
+ const L=40,Rr=8,T=10,B=32,X=v=>L+v/15*(w-L-Rr),Y=v=>h-B-v/300*(h-T-B);
+ c.font=`500 11px ${f}`;c.fillStyle=mut;c.strokeStyle=ln;c.lineWidth=1;
+ for(const v of[0,100,200,300]){c.beginPath();c.moveTo(L,Y(v));c.lineTo(w-Rr,Y(v));c.stroke();c.textAlign='right';c.textBaseline='middle';c.fillText(v,L-5,Y(v));}
+ c.textAlign='center';c.textBaseline='top';for(const v of[0,5,10,15])c.fillText(v,X(v),h-B+4);c.fillText('은하 중심에서의 거리 (kpc)',(L+w)/2,h-14);
+ c.save();c.translate(9,(T+h-B)/2);c.rotate(-Math.PI/2);c.textBaseline='middle';c.fillText('속도 (km/s)',0,0);c.restore();
+ c.beginPath();for(let r=0;r<=15;r+=.05)c.lineTo(X(r),Y(vcirc(r)));c.strokeStyle=ink;c.lineWidth=2;c.stroke();
+ for(const tr of TRACE){c.beginPath();c.arc(X(tr.r),Y(vcirc(tr.r)),tr.sun?6:5,0,TAU);c.fillStyle=tr.col;c.fill();c.strokeStyle=ink;c.lineWidth=1;c.stroke();}}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',drawRC);
 
 /* ---------- 태양계 ---------- */
 const J2000=Date.UTC(2000,0,1,12),START=new Date();START.setHours(12,0,0,0);
@@ -290,7 +351,7 @@ function goSolar(){if(st.view==='solar'||st.trans)return;st.trans={to:'solar',t0
 function goGalaxy(){if(st.view==='galaxy'||st.trans)return;st.trans={to:'galaxy',t0:performance.now(),from:sunPos()};}
 function setView(v){st.view=v;$('gPanel').hidden=v!=='galaxy';$('sPanel').hidden=v!=='solar';$('back').hidden=v!=='solar';
  $('cap').textContent=v==='galaxy'?'위에서 본 우리 은하':'태양계';$('hint').textContent=v==='galaxy'?'빨간 점(태양계)을 누르면 태양계로 들어가요':'행성 이름을 누르면 강조돼요 · Esc로 은하로 돌아가요';
- $('note').textContent=v==='galaxy'?'은하 전체가 함께 도는 것처럼 단순하게 나타냈어요. 실제로는 위치마다 도는 빠르기가 조금씩 달라요.':st.s.zoom?'안쪽 행성은 실제 거리 비율로 나타냈어요. 행성 크기는 실제 비율과 달라요.':'행성의 크기와 거리는 실제 비율과 달라요. 공전 주기는 실제 값이에요.';
+ $('note').textContent=v==='galaxy'?'별은 관측된 회전 속도대로 돌아요. 나선팔과 막대는 별과 다른 빠르기로 도는 무늬예요.':st.s.zoom?'안쪽 행성은 실제 거리 비율로 나타냈어요. 행성 크기는 실제 비율과 달라요.':'행성의 크기와 거리는 실제 비율과 달라요. 공전 주기는 실제 값이에요.';
  updClock();st.dirty=true;}
 function render(now){const{w,h,d}=Z;
  if(!st.trans){if(st.view==='galaxy')drawGalaxy(C);else drawSolar(C);return;}
@@ -302,24 +363,29 @@ function render(now){const{w,h,d}=Z;
  if(p>=1){const to=st.trans.to;st.trans=null;setView(to);}}
 
 /* ---------- 시계·패널 ---------- */
+const trRows=$('trRows');
+const fmtP=y=>{const ok=Math.floor(y/1e8),man=Math.round((y%1e8)/1e6)*100;return(ok?ok+'억 ':'')+(man?nf(man)+'만 ':'')+'년';};
+TRACE.forEach((T,i)=>{const tr=document.createElement('tr');const P_=TAU/omega(T.r);
+ tr.innerHTML=`<td><span class="sw" style="background:${T.col}"></span>${T.r} kpc${T.sun?' 태양계':''}</td><td>${Math.round(vcirc(T.r))}</td><td>${fmtP(P_)}</td><td id="tc${i}">0</td>`;trRows.appendChild(tr);});
+$('fSunP').textContent='약 '+fmtP(GAL_YEAR);$('fSunV').textContent='약 '+Math.round(vcirc(SUN_KPC))+' km/s';$('fBarP').textContent='약 '+fmtP(TAU/OM_BAR);$('fArmP').textContent='약 '+fmtP(TAU/OM_ARM);
 const rows=$('plRows');
 P.forEach(p=>{const tr=document.createElement('tr');tr.className='pl';tr.tabIndex=0;tr.id='r_'+p.id;
  tr.innerHTML=`<td><span class="sw" style="background:${p.col}"></span>${p.name}</td><td>${p.T<400?Math.round(p.T)+'일':(Math.round(p.T/365.25*10)/10)+'년'}</td><td id="n_${p.id}">0</td>`;
  const pick=()=>{st.s.sel=p.id;if(st.s.zoom&&p.a>2){st.s.zoom=false;}updS();};tr.onclick=pick;tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){pick();e.preventDefault();}};rows.appendChild(tr);});
-function updClock(){if(st.view==='galaxy'){const t=st.g.t;$('clkK').textContent='흐른 시간';$('clkBig').textContent=fmtYears(t);$('clkSub').textContent=`태양계가 은하 중심을 ${(t/GAL_YEAR).toFixed(2)}바퀴 돌았어요`;
-  const f=$('gFact');if(t<6.6e7)f.textContent='공룡이 사라진 것은 약 6,600만 년 전이에요. 그 뒤로 태양계는 은하 중심을 약 0.3바퀴 돌았어요.';else if(t<GAL_YEAR)f.textContent='한 바퀴(약 2억 2,500만 년)를 다 돌려면 아직 멀었어요. 태양계가 생긴 뒤(약 46억 년) 지금까지 약 20바퀴 돌았어요.';else f.textContent=`벌써 ${Math.floor(t/GAL_YEAR)}바퀴를 돌았어요. 태양계가 생긴 뒤(약 46억 년) 지금까지는 약 20바퀴 돌았어요.`;}
+function updClock(){if(st.view==='galaxy'){const t=st.g.t;$('clkK').textContent='흐른 시간';$('clkBig').textContent=fmtYears(t);$('clkSub').textContent=`태양계가 은하 중심을 ${(t/GAL_YEAR).toFixed(2)}바퀴 돌았어요`;TRACE.forEach((T,i)=>{const n=omega(T.r)*t/TAU;$('tc'+i).textContent=n.toFixed(n<10?2:1);});
+  const f=$('gFact');if(t<6.6e7)f.textContent='공룡이 사라진 것은 약 6,600만 년 전이에요. 그 뒤로 태양계는 은하 중심을 약 0.3바퀴 돌았어요.';else if(t<GAL_YEAR)f.textContent=`한 바퀴(약 ${fmtP(GAL_YEAR)})를 다 돌려면 아직 멀었어요. 태양계가 생긴 뒤(약 46억 년) 지금까지 약 20바퀴 돌았어요.`;else f.textContent=`벌써 ${Math.floor(t/GAL_YEAR)}바퀴를 돌았어요. 태양계가 생긴 뒤(약 46억 년) 지금까지는 약 20바퀴 돌았어요.`;}
  else{const dd=st.s.d,y=Math.floor(dd/365.25),rem=dd-y*365.25,m=Math.floor(rem/30.44),dy=Math.floor(rem-m*30.44);
   $('clkK').textContent='흐른 시간';$('clkBig').textContent=(y?y+'년 ':'')+(y||m?m+'개월 ':'')+dy+'일';
   const dt=new Date(START.getTime()+dd*864e5);$('clkSub').textContent=`${dt.getFullYear()}년 ${dt.getMonth()+1}월 ${dt.getDate()}일 · 지구 ${(dd/365.256).toFixed(2)}바퀴`;
   for(const p of P)$('n_'+p.id).textContent=(dd/p.T).toFixed(dd/p.T<10?2:1)+'바퀴';}}
-function updG(){const g=st.g;$('gPlay').setAttribute('aria-pressed',g.play);$('gPlay').textContent=g.play?'일시 정지 ❚❚':'재생 ▶';$('gSun').setAttribute('aria-pressed',g.sun);
+function updG(){const g=st.g;$('gPlay').setAttribute('aria-pressed',g.play);$('gPlay').textContent=g.play?'일시 정지 ❚❚':'재생 ▶';$('gSun').setAttribute('aria-pressed',g.sun);$('gTrace').setAttribute('aria-pressed',g.trace);
  $('gSpeed').value=g.lg;$('gSpeedV').textContent='1초에 '+fmtRate(Math.pow(10,g.lg));document.querySelectorAll('[data-g]').forEach(b=>b.setAttribute('aria-pressed',Math.abs(+b.dataset.g-g.lg)<.02));updClock();st.dirty=true;}
 function updS(){const s=st.s;$('sPlay').setAttribute('aria-pressed',s.play);$('sPlay').textContent=s.play?'일시 정지 ❚❚':'재생 ▶';$('sNames').setAttribute('aria-pressed',s.names);$('sZoom').setAttribute('aria-pressed',s.zoom);
  $('sSpeed').value=s.lg;$('sSpeedV').textContent='1초에 '+fmtDays(Math.pow(10,s.lg));document.querySelectorAll('[data-s]').forEach(b=>b.setAttribute('aria-pressed',Math.abs(+b.dataset.s-s.lg)<.02));
  P.forEach(p=>$('r_'+p.id).classList.toggle('sel',p.id===s.sel));if(st.view==='solar')setView('solar');updClock();st.dirty=true;}
 $('gPlay').onclick=()=>{st.g.play=!st.g.play;updG();};$('gReset').onclick=()=>{st.g.t=0;updG();};
 $('gSpeed').addEventListener('input',e=>{st.g.lg=+e.target.value;updG();});document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{st.g.lg=+b.dataset.g;updG();});
-$('gSun').onclick=()=>{st.g.sun=!st.g.sun;updG();};$('gEnter').onclick=()=>{if(!st.g.sun){st.g.sun=true;updG();}goSolar();};
+$('gSun').onclick=()=>{st.g.sun=!st.g.sun;updG();};$('gTrace').onclick=()=>{st.g.trace=!st.g.trace;updG();};$('gEnter').onclick=()=>{if(!st.g.sun){st.g.sun=true;updG();}goSolar();};
 $('sPlay').onclick=()=>{st.s.play=!st.s.play;updS();};$('sReset').onclick=()=>{st.s.d=0;updS();};
 $('sSpeed').addEventListener('input',e=>{st.s.lg=+e.target.value;updS();});document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{st.s.lg=+b.dataset.s;updS();});
 $('sNames').onclick=()=>{st.s.names=!st.s.names;updS();};$('sZoom').onclick=()=>{st.s.zoom=!st.s.zoom;if(st.s.zoom&&P.find(p=>p.id===st.s.sel).a>2)st.s.sel='earth';updS();};
