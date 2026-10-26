@@ -28,7 +28,10 @@
     document.title = "과학 수업 도구 모음";
     app.appendChild(el("div", "eyebrow", "중학교 과학 수업"));
     app.appendChild(el("h1", null, "과학 수업 도구 모음"));
-    app.appendChild(el("p", "lead", "수업 시간에 전자칠판이나 학생 기기에서 바로 열어 쓰는 과학 웹 도구입니다. 분야를 골라 들어가세요."));
+    var lead = el("p", "lead", "수업 시간에 전자칠판이나 학생 기기에서 바로 열어 쓰는 과학 웹 도구입니다.");
+    lead.appendChild(document.createElement("br"));
+    lead.appendChild(document.createTextNode("분야를 골라 들어가세요."));
+    app.appendChild(lead);
     var grid = el("div", "fields");
     SC.fields.forEach(function (f) {
       var a = el("a", "field f-" + f.id); a.href = f.id + "/";
