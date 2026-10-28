@@ -10,7 +10,7 @@
 | 분야 | 주소 | 도구 |
 |---|---|---|
 | 물리학 | [/physics/](https://galaxy31.github.io/science_class/physics/) | 준비 중 |
-| 화학 | [/chemistry/](https://galaxy31.github.io/science_class/chemistry/) | 준비 중 |
+| 화학 | [/chemistry/](https://galaxy31.github.io/science_class/chemistry/) | [원소 주기율표 탐험](https://galaxy31.github.io/science_class/chemistry/periodic_table/) |
 | 생명과학 | [/life_science/](https://galaxy31.github.io/science_class/life_science/) | 준비 중 |
 | 지구과학 | [/earth_science/](https://galaxy31.github.io/science_class/earth_science/) | [시차 관찰 산책길](https://galaxy31.github.io/science_class/earth_science/parallax/), [연주 시차 관측소](https://galaxy31.github.io/science_class/earth_science/annual_parallax/), [별의 밝기와 등급](https://galaxy31.github.io/science_class/earth_science/star_brightness/), [겉보기 등급과 절대 등급](https://galaxy31.github.io/science_class/earth_science/abs_magnitude/), [우리 은하와 태양계](https://galaxy31.github.io/science_class/earth_science/milky_way/) |
 

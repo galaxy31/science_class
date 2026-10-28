@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원소 주기율표 탐험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#0d1126; --bg1:#141b3d; --panel:#1a2147; --panel2:#222a58;
+  --line:rgba(255,255,255,.10); --txt:#eaedfb; --sub:#9aa3cf;
+  --nucleus:#ffb454; --electron:#6ee7ff;
+  --c-alkali:#ff8787; --c-alkaline:#ffb05c; --c-transition:#e8c468;
+  --c-lanthanide:#5fd3e3; --c-actinide:#4ea8de; --c-post:#91a7ff;
+  --c-metalloid:#57cfa0; --c-nonmetal:#82e088; --c-halogen:#f783ac; --c-noble:#b388ff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:radial-gradient(1200px 600px at 50% -10%, #1b2455 0%, var(--bg0) 60%);
+  color:var(--txt); font-family:'Noto Sans KR',sans-serif; min-height:100%;}
+body{padding:22px 14px 40px}
+
+/* ───── 헤더 ───── */
+header{max-width:1180px;margin:0 auto 18px;text-align:center}
+header h1{font-weight:900;font-size:clamp(22px,3.2vw,34px);letter-spacing:-.5px}
+header h1 .dot{display:inline-block;width:.42em;height:.42em;border-radius:50%;
+  background:var(--electron);box-shadow:0 0 12px var(--electron);margin:0 .15em;vertical-align:.22em}
+header p{color:var(--sub);font-size:14px;margin-top:6px}
+
+/* ───── 범례 ───── */
+.legend{max-width:1180px;margin:0 auto 16px;display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);
+  background:var(--panel);border:1px solid var(--line);border-radius:999px;
+  padding:5px 11px;cursor:pointer;transition:.15s;user-select:none}
+.chip i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.chip:hover{color:var(--txt);border-color:rgba(255,255,255,.25)}
+.chip.active{color:var(--txt);background:var(--panel2);border-color:rgba(255,255,255,.4)}
+
+/* ───── 주기율표 ───── */
+.table-wrap{max-width:1180px;margin:0 auto;overflow-x:auto;padding-bottom:8px}
+.ptable,.ftable{display:grid;grid-template-columns:26px repeat(18,minmax(56px,1fr));gap:4px;min-width:1090px}
+.ftable{margin-top:14px}
+.axis{display:flex;align-items:center;justify-content:center;color:var(--sub);
+  font-family:'Space Grotesk';font-size:11px}
+.cell{position:relative;border-radius:8px;padding:5px 6px;height:62px;cursor:pointer;
+  background:color-mix(in srgb, var(--c) 13%, var(--panel));
+  border:1px solid color-mix(in srgb, var(--c) 35%, transparent);
+  transition:transform .12s, box-shadow .12s, opacity .2s, filter .2s}
+.cell:hover,.cell:focus-visible{transform:translateY(-3px);z-index:2;
+  box-shadow:0 6px 18px rgba(0,0,0,.45), 0 0 0 1.5px var(--c);outline:none}
+.cell .no{position:absolute;top:4px;left:6px;font-family:'Space Grotesk';font-size:10px;color:var(--sub)}
+.cell .sym{display:block;text-align:center;margin-top:11px;font-family:'Space Grotesk';
+  font-weight:700;font-size:19px;color:var(--c);line-height:1}
+.cell .nm{display:block;text-align:center;font-size:10px;color:var(--sub);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell.dim{opacity:.16;filter:grayscale(.8)}
+.cell.flash{animation:flash 1.2s ease 2}
+@keyframes flash{50%{box-shadow:0 0 0 2px var(--c),0 0 22px var(--c)}}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:10px;color:var(--c);background:transparent;
+  border:1.5px dashed color-mix(in srgb, var(--c) 50%, transparent)}
+.ph b{font-family:'Space Grotesk';font-size:11px}
+.flabel{grid-column:1 / span 3;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:10px;font-size:11px;color:var(--sub)}
+
+/* ───── 상세 모달 ───── */
+.overlay{position:fixed;inset:0;background:rgba(5,8,22,.7);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.overlay.open{display:flex}
+.card{background:linear-gradient(180deg,var(--panel) 0%, #161d42 100%);
+  border:1px solid var(--line);border-radius:18px;max-width:760px;width:100%;
+  max-height:92vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+.card-head{display:flex;align-items:center;gap:14px;padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.bigsym{font-family:'Space Grotesk';font-weight:700;font-size:40px;color:var(--c);
+  background:color-mix(in srgb,var(--c) 14%, transparent);
+  border:1.5px solid color-mix(in srgb,var(--c) 45%, transparent);
+  border-radius:14px;min-width:72px;height:72px;display:flex;align-items:center;justify-content:center}
+.head-txt h2{font-size:21px;font-weight:900}
+.head-txt .en{color:var(--sub);font-size:13px;font-family:'Space Grotesk'}
+.head-txt .cat{display:inline-block;margin-top:5px;font-size:11px;color:#0d1126;font-weight:700;
+  background:var(--c);border-radius:999px;padding:2px 10px}
+.head-btns{margin-left:auto;display:flex;gap:6px}
+.hbtn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+  width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:15px;transition:.15s}
+.hbtn:hover{background:#2c356e}
+.card-body{display:grid;grid-template-columns:340px 1fr;gap:10px;padding:14px 20px 6px}
+.atom-box{display:flex;flex-direction:column;align-items:center;gap:8px}
+canvas{background:radial-gradient(circle at 50% 50%, #101840 0%, #0b0f28 75%);
+  border:1px solid var(--line);border-radius:14px;width:320px;height:320px;max-width:100%}
+.econf{font-size:12px;color:var(--sub);text-align:center;line-height:1.7}
+.econf b{color:var(--electron);font-family:'Space Grotesk'}
+.props{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-content:start}
+.prop{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+.prop .k{font-size:11px;color:var(--sub)}
+.prop .v{font-size:14px;font-weight:700;margin-top:2px}
+.prop .v small{font-weight:400;color:var(--sub)}
+.prop.p .v{color:#ff9d9d}.prop.n .v{color:#cdd3f0}.prop.e .v{color:var(--electron)}
+.desc{margin:8px 20px 18px;padding:12px 14px;background:rgba(255,255,255,.04);
+  border-left:3px solid var(--c);border-radius:0 10px 10px 0;font-size:14px;line-height:1.7;color:#dde2f7}
+
+@media (max-width:680px){
+  .card-body{grid-template-columns:1fr}
+  .props{grid-template-columns:1fr 1fr}
+  .bigsym{min-width:58px;height:58px;font-size:30px}
+  .cmp-grid{grid-template-columns:1fr}
+}
+
+/* ───── 비교 모드 ───── */
+.toolbar{max-width:1180px;margin:-4px auto 14px;display:flex;justify-content:center}
+#cmp-toggle{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;
+  color:var(--txt);background:var(--panel);border:1px solid var(--line);border-radius:999px;
+  padding:7px 17px;cursor:pointer;transition:.15s;font-family:inherit}
+#cmp-toggle:hover{border-color:rgba(255,255,255,.3)}
+#cmp-toggle.on{background:var(--electron);color:#0d1126;border-color:transparent;
+  box-shadow:0 0 18px rgba(110,231,255,.45)}
+body.cmp-mode .cell:not(.ph){cursor:copy}
+.cell.picked{transform:translateY(-3px);box-shadow:0 0 0 2px var(--c),0 0 20px var(--c);z-index:3}
+.hint{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(8px);
+  background:#262e63;border:1px solid rgba(255,255,255,.2);color:var(--txt);font-size:13px;
+  padding:9px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;
+  z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap}
+.hint.show{opacity:1;transform:translateX(-50%)}
+.card.cmp{max-width:1000px}
+.cmp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line)}
+.cmp-head h3{font-size:17px;font-weight:900}
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 20px 4px}
+.cmp-col{display:flex;flex-direction:column;align-items:center;gap:7px;
+  background:rgba(255,255,255,.03);border:1px solid color-mix(in srgb,var(--c) 32%,transparent);
+  border-radius:14px;padding:12px}
+.cmp-col .ttl{display:flex;align-items:center;gap:9px}
+.cmp-col .csym{font-family:'Space Grotesk';font-weight:700;font-size:22px;color:var(--c)}
+.cmp-col .cname{font-weight:900;font-size:16px}
+.cmp-col .ccat{font-size:11px;color:#0d1126;font-weight:700;background:var(--c);border-radius:999px;padding:2px 10px}
+.cmp-col canvas{width:240px;height:240px}
+.hbtn.sm{width:27px;height:27px;font-size:11px;border-radius:7px}
+.cmp-tablewrap{padding:10px 20px 18px;overflow-x:auto}
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px}
+.cmp-table th{padding:8px 10px;border-bottom:2px solid var(--line)}
+.cmp-table td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:center;line-height:1.55}
+.cmp-table tr:last-child td{border-bottom:none}
+.cmp-table td:first-child{color:var(--sub);text-align:left;white-space:nowrap}
+.cmp-table td.diff{color:#ffd57a;font-weight:700}
+
+/* ───── 전체 화면 버튼 ───── */
+.fs-btn{position:fixed;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));z-index:40;
+  display:flex;align-items:center;gap:7px;min-height:44px;padding:0 15px;font-family:inherit;font-size:14px;font-weight:700;
+  color:var(--txt);background:var(--panel);border:1px solid rgba(255,255,255,.22);border-radius:12px;cursor:pointer;transition:.15s;
+  box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.fs-btn:hover{border-color:rgba(255,255,255,.45);background:var(--panel2)}
+.fs-btn:focus-visible{outline:2px solid var(--electron);outline-offset:2px}
+.fs-btn svg{width:18px;height:18px}
+@media (max-width:680px){.fs-btn span{display:none}.fs-btn{padding:0 12px}header{padding-top:40px}}
+@media (prefers-reduced-motion:reduce){
+  .cell,.cell:hover{transition:none;transform:none}
+}
+</style>
+</head>
+<body>
+<button class="fs-btn" id="fs-btn" type="button" aria-label="전체 화면">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path id="fs-icon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+  <span id="fs-label">전체 화면</span>
+</button>
+<header>
+  <h1>원소 주기율표 탐험<span class="dot"></span></h1>
+  <p>원소 칸을 클릭하면 원자핵과 전자 궤도, 원소의 특징을 볼 수 있어요. 아래 범례를 누르면 같은 종류의 원소만 모아 볼 수 있습니다.</p>
+</header>
+<div class="legend" id="legend"></div>
+<div class="toolbar">
+  <button id="cmp-toggle">⚖ 두 원소 비교하기</button>
+</div>
+<div class="table-wrap">
+  <div class="ptable" id="ptable"></div>
+  <div class="ftable" id="ftable"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card" id="card" role="dialog" aria-modal="true">
+    <div class="card-head">
+      <div class="bigsym" id="m-sym"></div>
+      <div class="head-txt">
+        <h2 id="m-name"></h2>
+        <div class="en" id="m-en"></div>
+        <span class="cat" id="m-cat"></span>
+      </div>
+      <div class="head-btns">
+        <button class="hbtn" id="btn-prev" title="이전 원소">◀</button>
+        <button class="hbtn" id="btn-next" title="다음 원소">▶</button>
+        <button class="hbtn" id="btn-close" title="닫기">✕</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="atom-box">
+        <canvas id="atom" width="320" height="320"></canvas>
+        <div class="econf" id="m-econf"></div>
+      </div>
+      <div class="props" id="m-props"></div>
+    </div>
+    <div class="desc" id="m-desc"></div>
+  </div>
+</div>
+
+<div class="overlay" id="cmp-overlay">
+  <div class="card cmp" role="dialog" aria-modal="true">
+    <div class="cmp-head">
+      <h3>⚖ 원소 비교</h3>
+      <button class="hbtn" id="cmp-close" title="닫기">✕</button>
+    </div>
+    <div class="cmp-grid">
+      <div class="cmp-col" id="cmp-a">
+        <div class="ttl">
+          <button class="hbtn sm" data-side="0" data-dir="-1" title="이전 원소">◀</button>
+          <span class="csym"></span><span class="cname"></span>
+          <button class="hbtn sm" data-side="0" data-dir="1" title="다음 원소">▶</button>
+        </div>
+        <span class="cat ccat"></span>
+        <canvas id="atom-a" width="240" height="240"></canvas>
+        <div class="econf"></div>
+      </div>
+      <div class="cmp-col" id="cmp-b">
+        <div class="ttl">
+          <button class="hbtn sm" data-side="1" data-dir="-1" title="이전 원소">◀</button>
+          <span class="csym"></span><span class="cname"></span>
+          <button class="hbtn sm" data-side="1" data-dir="1" title="다음 원소">▶</button>
+        </div>
+        <span class="cat ccat"></span>
+        <canvas id="atom-b" width="240" height="240"></canvas>
+        <div class="econf"></div>
+      </div>
+    </div>
+    <div class="cmp-tablewrap">
+      <table class="cmp-table">
+        <thead><tr><th>항목</th><th id="cmp-ha"></th><th id="cmp-hb"></th></tr></thead>
+        <tbody id="cmp-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="hint" id="hint"></div>
+<script>
+/* ───────── 원소 데이터: [번호, 기호, 한글이름, 영문이름, 원자량, 족, 주기, 분류, 전자껍질, 설명] ───────── */
+const CAT = {
+  alkali:["알칼리 금속","--c-alkali"], alkaline:["알칼리 토금속","--c-alkaline"],
+  transition:["전이 금속","--c-transition"], lanthanide:["란타넘족","--c-lanthanide"],
+  actinide:["악티늄족","--c-actinide"], post:["전이후 금속","--c-post"],
+  metalloid:["준금속","--c-metalloid"], nonmetal:["비금속","--c-nonmetal"],
+  halogen:["할로젠","--c-halogen"], noble:["비활성 기체","--c-noble"]
+};
+const SYN = new Set([43,61,84,85,86,87,88,89,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118]);
+const GAS = new Set([1,2,7,8,9,10,17,18,36,54,86]);
+const LIQ = new Set([35,80]);
+const E = [
+[1,"H","수소","Hydrogen",1.008,1,1,"nonmetal",[1],"우주에서 가장 풍부한 원소로, 가장 가볍고 물(H₂O)을 이루는 성분이다."],
+[2,"He","헬륨","Helium",4.003,18,1,"noble",[2],"풍선과 비행선에 쓰이는 가벼운 비활성 기체로, 태양의 핵융합으로 만들어진다."],
+[3,"Li","리튬","Lithium",6.94,1,2,"alkali",[2,1],"가장 가벼운 금속으로 스마트폰과 전기차 배터리에 사용된다."],
+[4,"Be","베릴륨","Beryllium",9.012,2,2,"alkaline",[2,2],"단단하고 가벼워 우주 망원경 거울과 항공 부품에 쓰인다."],
+[5,"B","붕소","Boron",10.81,13,2,"metalloid",[2,3],"내열 유리와 세제, 반도체에 쓰이는 준금속이다."],
+[6,"C","탄소","Carbon",12.011,14,2,"nonmetal",[2,4],"생명체를 이루는 핵심 원소로 다이아몬드, 흑연, 연필심의 주성분이다."],
+[7,"N","질소","Nitrogen",14.007,15,2,"nonmetal",[2,5],"공기의 약 78%를 차지하며 비료의 원료가 된다."],
+[8,"O","산소","Oxygen",15.999,16,2,"nonmetal",[2,6],"공기의 약 21%를 차지하며 호흡과 연소에 꼭 필요하다."],
+[9,"F","플루오린","Fluorine",18.998,17,2,"halogen",[2,7],"반응성이 가장 큰 원소로 치약(불소)과 프라이팬 코팅에 쓰인다."],
+[10,"Ne","네온","Neon",20.180,18,2,"noble",[2,8],"붉은 네온사인 빛을 내는 비활성 기체다."],
+[11,"Na","나트륨 (소듐)","Sodium",22.990,1,3,"alkali",[2,8,1],"소금(염화 나트륨)의 성분으로, 물과 격렬히 반응하는 무른 금속이다."],
+[12,"Mg","마그네슘","Magnesium",24.305,2,3,"alkaline",[2,8,2],"밝은 빛을 내며 타는 가벼운 금속으로, 엽록소의 중심 원소다."],
+[13,"Al","알루미늄","Aluminium",26.982,13,3,"post",[2,8,3],"가볍고 잘 녹슬지 않아 음료수 캔, 포일, 비행기에 널리 쓰인다."],
+[14,"Si","규소","Silicon",28.085,14,3,"metalloid",[2,8,4],"모래와 암석의 주성분이며 반도체 칩의 핵심 재료다."],
+[15,"P","인","Phosphorus",30.974,15,3,"nonmetal",[2,8,5],"성냥과 비료에 쓰이며 DNA와 뼈를 구성한다."],
+[16,"S","황","Sulfur",32.06,16,3,"nonmetal",[2,8,6],"화산 근처에서 발견되는 노란색 고체로, 황산의 원료다."],
+[17,"Cl","염소","Chlorine",35.45,17,3,"halogen",[2,8,7],"수돗물과 수영장 소독에 쓰이는 황록색 기체다."],
+[18,"Ar","아르곤","Argon",39.95,18,3,"noble",[2,8,8],"공기 중 세 번째로 많은 기체로, 전구의 충전 가스로 쓰인다."],
+[19,"K","칼륨 (포타슘)","Potassium",39.098,1,4,"alkali",[2,8,8,1],"물과 격렬히 반응하는 금속으로, 식물 비료와 바나나에 풍부하다."],
+[20,"Ca","칼슘","Calcium",40.078,2,4,"alkaline",[2,8,8,2],"뼈와 치아, 조개껍데기의 주성분이다."],
+[21,"Sc","스칸듐","Scandium",44.956,3,4,"transition",[2,8,9,2],"가볍고 강해 항공우주 합금과 자전거 프레임에 쓰인다."],
+[22,"Ti","타이타늄","Titanium",47.867,4,4,"transition",[2,8,10,2],"가볍고 강하며 녹슬지 않아 인공관절과 항공기에 쓰인다."],
+[23,"V","바나듐","Vanadium",50.942,5,4,"transition",[2,8,11,2],"강철에 섞으면 더 단단해져 공구용 합금에 쓰인다."],
+[24,"Cr","크로뮴","Chromium",51.996,6,4,"transition",[2,8,13,1],"반짝이는 도금과 스테인리스강의 재료다."],
+[25,"Mn","망가니즈","Manganese",54.938,7,4,"transition",[2,8,13,2],"강철을 단단하게 만들고 건전지에도 쓰인다."],
+[26,"Fe","철","Iron",55.845,8,4,"transition",[2,8,14,2],"인류가 가장 많이 쓰는 금속으로, 혈액 속 헤모글로빈에도 들어 있다."],
+[27,"Co","코발트","Cobalt",58.933,9,4,"transition",[2,8,15,2],"푸른색 안료와 배터리 재료로 쓰인다."],
+[28,"Ni","니켈","Nickel",58.693,10,4,"transition",[2,8,16,2],"동전과 스테인리스강, 충전지에 쓰인다."],
+[29,"Cu","구리","Copper",63.546,11,4,"transition",[2,8,18,1],"전기가 잘 통해 전선의 재료로 쓰이는 붉은 금속이다."],
+[30,"Zn","아연","Zinc",65.38,12,4,"transition",[2,8,18,2],"철의 녹을 막는 도금과 건전지에 쓰인다."],
+[31,"Ga","갈륨","Gallium",69.723,13,4,"post",[2,8,18,3],"녹는점이 29.8℃로, 손바닥 위에서도 녹는 금속이다."],
+[32,"Ge","저마늄","Germanium",72.630,14,4,"metalloid",[2,8,18,4],"초기 트랜지스터에 쓰인 준금속 반도체 재료다."],
+[33,"As","비소","Arsenic",74.922,15,4,"metalloid",[2,8,18,5],"독성이 강하지만 반도체(갈륨비소) 재료로도 이용된다."],
+[34,"Se","셀레늄","Selenium",78.971,16,4,"nonmetal",[2,8,18,6],"빛을 받으면 전기가 통해 복사기와 태양전지에 쓰인다."],
+[35,"Br","브로민","Bromine",79.904,17,4,"halogen",[2,8,18,7],"실온에서 액체인 유일한 비금속 원소로, 적갈색을 띤다."],
+[36,"Kr","크립톤","Krypton",83.798,18,4,"noble",[2,8,18,8],"고성능 전구와 단열 창문에 쓰이는 비활성 기체다."],
+[37,"Rb","루비듐","Rubidium",85.468,1,5,"alkali",[2,8,18,8,1],"반응성이 매우 큰 금속으로 원자시계에 쓰인다."],
+[38,"Sr","스트론튬","Strontium",87.62,2,5,"alkaline",[2,8,18,8,2],"불꽃놀이의 붉은색을 내는 금속이다."],
+[39,"Y","이트륨","Yttrium",88.906,3,5,"transition",[2,8,18,9,2],"LED와 TV 형광체, 레이저에 쓰인다."],
+[40,"Zr","지르코늄","Zirconium",91.224,4,5,"transition",[2,8,18,10,2],"중성자를 잘 통과시켜 원자로 연료봉의 피복에 쓰인다."],
+[41,"Nb","나이오븀","Niobium",92.906,5,5,"transition",[2,8,18,12,1],"MRI용 초전도 자석의 합금 재료다."],
+[42,"Mo","몰리브데넘","Molybdenum",95.95,6,5,"transition",[2,8,18,13,1],"강철을 강하게 만들고 우리 몸의 효소에도 들어 있다."],
+[43,"Tc","테크네튬","Technetium",98,7,5,"transition",[2,8,18,13,2],"인공적으로 만든 최초의 원소로, 의료 영상 진단에 쓰인다."],
+[44,"Ru","루테늄","Ruthenium",101.07,8,5,"transition",[2,8,18,15,1],"전자제품의 전극과 촉매에 쓰이는 희귀 금속이다."],
+[45,"Rh","로듐","Rhodium",102.906,9,5,"transition",[2,8,18,16,1],"가장 비싼 귀금속 중 하나로, 자동차 배기가스 정화 촉매에 쓰인다."],
+[46,"Pd","팔라듐","Palladium",106.42,10,5,"transition",[2,8,18,18],"수소를 잘 흡수하며 자동차 촉매 변환기에 쓰인다."],
+[47,"Ag","은","Silver",107.868,11,5,"transition",[2,8,18,18,1],"전기가 가장 잘 통하는 금속으로 장신구와 거울에 쓰인다."],
+[48,"Cd","카드뮴","Cadmium",112.414,12,5,"transition",[2,8,18,18,2],"독성이 있는 금속으로, 충전지와 안료에 쓰였다."],
+[49,"In","인듐","Indium",114.818,13,5,"post",[2,8,18,18,3],"터치스크린의 투명 전극(ITO) 재료다."],
+[50,"Sn","주석","Tin",118.710,14,5,"post",[2,8,18,18,4],"청동(구리+주석)과 통조림 캔 도금에 쓰여 온 오래된 금속이다."],
+[51,"Sb","안티모니","Antimony",121.760,15,5,"metalloid",[2,8,18,18,5],"불에 잘 타지 않게 하는 난연제와 합금에 쓰이는 준금속이다."],
+[52,"Te","텔루륨","Tellurium",127.60,16,5,"metalloid",[2,8,18,18,6],"태양전지와 반도체에 쓰이는 희귀한 준금속이다."],
+[53,"I","아이오딘","Iodine",126.904,17,5,"halogen",[2,8,18,18,7],"보라색 증기를 내며, 소독약과 갑상샘 호르몬에 꼭 필요하다."],
+[54,"Xe","제논","Xenon",131.293,18,5,"noble",[2,8,18,18,8],"자동차 전조등과 우주선 이온 엔진에 쓰인다."],
+[55,"Cs","세슘","Caesium",132.905,1,6,"alkali",[2,8,18,18,8,1],"1초의 기준이 되는 원자시계에 쓰이며, 반응성이 매우 크다."],
+[56,"Ba","바륨","Barium",137.327,2,6,"alkaline",[2,8,18,18,8,2],"X선 촬영 조영제와 불꽃놀이의 녹색에 쓰인다."],
+[57,"La","란타넘","Lanthanum",138.905,0,6,"lanthanide",[2,8,18,18,9,2],"카메라 렌즈 유리와 하이브리드차 배터리에 쓰인다."],
+[58,"Ce","세륨","Cerium",140.116,0,6,"lanthanide",[2,8,18,19,9,2],"라이터의 부싯돌과 유리 연마제에 쓰인다."],
+[59,"Pr","프라세오디뮴","Praseodymium",140.908,0,6,"lanthanide",[2,8,18,21,8,2],"강력한 자석과 용접용 보안경 유리에 쓰인다."],
+[60,"Nd","네오디뮴","Neodymium",144.242,0,6,"lanthanide",[2,8,18,22,8,2],"세상에서 가장 강한 영구자석의 재료다."],
+[61,"Pm","프로메튬","Promethium",145,0,6,"lanthanide",[2,8,18,23,8,2],"자연에 거의 없는 방사성 원소로, 야광 도료에 쓰였다."],
+[62,"Sm","사마륨","Samarium",150.36,0,6,"lanthanide",[2,8,18,24,8,2],"고온에서도 강한 사마륨-코발트 자석에 쓰인다."],
+[63,"Eu","유로퓸","Europium",151.964,0,6,"lanthanide",[2,8,18,25,8,2],"TV 화면의 붉은색 형광체와 유로화 위조 방지에 쓰인다."],
+[64,"Gd","가돌리늄","Gadolinium",157.25,0,6,"lanthanide",[2,8,18,25,9,2],"MRI 조영제와 중성자 차폐에 쓰인다."],
+[65,"Tb","터븀","Terbium",158.925,0,6,"lanthanide",[2,8,18,27,8,2],"녹색 형광체와 음향 진동 소자에 쓰인다."],
+[66,"Dy","디스프로슘","Dysprosium",162.500,0,6,"lanthanide",[2,8,18,28,8,2],"전기차 모터용 고온 자석에 꼭 필요한 첨가제다."],
+[67,"Ho","홀뮴","Holmium",164.930,0,6,"lanthanide",[2,8,18,29,8,2],"자기적 성질이 가장 강한 원소로, 의료용 레이저에 쓰인다."],
+[68,"Er","어븀","Erbium",167.259,0,6,"lanthanide",[2,8,18,30,8,2],"광통신 케이블의 신호를 증폭하는 데 쓰인다."],
+[69,"Tm","툴륨","Thulium",168.934,0,6,"lanthanide",[2,8,18,31,8,2],"휴대용 X선 장비와 레이저에 쓰이는 희귀 원소다."],
+[70,"Yb","이터븀","Ytterbium",173.045,0,6,"lanthanide",[2,8,18,32,8,2],"차세대 광시계와 레이저에 쓰인다."],
+[71,"Lu","루테튬","Lutetium",174.967,0,6,"lanthanide",[2,8,18,32,9,2],"암 진단용 PET 검사 장비에 쓰인다."],
+[72,"Hf","하프늄","Hafnium",178.49,4,6,"transition",[2,8,18,32,10,2],"원자로 제어봉과 반도체 공정에 쓰인다."],
+[73,"Ta","탄탈럼","Tantalum",180.948,5,6,"transition",[2,8,18,32,11,2],"스마트폰 속 소형 콘덴서의 핵심 재료다."],
+[74,"W","텅스텐","Tungsten",183.84,6,6,"transition",[2,8,18,32,12,2],"금속 중 녹는점이 가장 높아(3,422℃) 전구 필라멘트에 쓰였다."],
+[75,"Re","레늄","Rhenium",186.207,7,6,"transition",[2,8,18,32,13,2],"제트 엔진의 터빈 합금에 쓰이는 매우 희귀한 금속이다."],
+[76,"Os","오스뮴","Osmium",190.23,8,6,"transition",[2,8,18,32,14,2],"밀도가 가장 큰 원소로, 만년필 펜촉에 쓰인다."],
+[77,"Ir","이리듐","Iridium",192.217,9,6,"transition",[2,8,18,32,15,2],"부식에 가장 강한 금속으로, 점화 플러그에 쓰인다."],
+[78,"Pt","백금","Platinum",195.084,10,6,"transition",[2,8,18,32,17,1],"귀금속이자 자동차 촉매, 항암제의 재료다."],
+[79,"Au","금","Gold",196.967,11,6,"transition",[2,8,18,32,18,1],"변하지 않는 노란 광택으로 화폐, 장신구, 전자부품에 쓰인다."],
+[80,"Hg","수은","Mercury",200.592,12,6,"transition",[2,8,18,32,18,2],"실온에서 액체인 유일한 금속으로, 온도계에 쓰였다."],
+[81,"Tl","탈륨","Thallium",204.38,13,6,"post",[2,8,18,32,18,3],"독성이 강한 금속으로, 한때 쥐약에 쓰였다."],
+[82,"Pb","납","Lead",207.2,14,6,"post",[2,8,18,32,18,4],"무겁고 무른 금속으로, 자동차 배터리와 방사선 차폐에 쓰인다."],
+[83,"Bi","비스무트","Bismuth",208.980,15,6,"post",[2,8,18,32,18,5],"무지개빛 계단 모양 결정을 만들며, 소화제에도 쓰인다."],
+[84,"Po","폴로늄","Polonium",209,16,6,"post",[2,8,18,32,18,6],"퀴리 부부가 발견한 강한 방사성 원소다."],
+[85,"At","아스타틴","Astatine",210,17,6,"halogen",[2,8,18,32,18,7],"지구에서 가장 희귀한 자연 원소다."],
+[86,"Rn","라돈","Radon",222,18,6,"noble",[2,8,18,32,18,8],"암석에서 나오는 방사성 기체로, 실내 환기가 중요하다."],
+[87,"Fr","프랑슘","Francium",223,1,7,"alkali",[2,8,18,32,18,8,1],"자연 원소 중 가장 불안정하여 수명이 매우 짧다."],
+[88,"Ra","라듐","Radium",226,2,7,"alkaline",[2,8,18,32,18,8,2],"퀴리 부부가 발견했으며, 어둠 속에서 스스로 빛을 낸다."],
+[89,"Ac","악티늄","Actinium",227,0,7,"actinide",[2,8,18,32,18,9,2],"악티늄족이라는 이름의 기원이 된 방사성 금속이다."],
+[90,"Th","토륨","Thorium",232.038,0,7,"actinide",[2,8,18,32,18,10,2],"차세대 원자력 연료로 연구되는 방사성 금속이다."],
+[91,"Pa","프로트악티늄","Protactinium",231.036,0,7,"actinide",[2,8,18,32,20,9,2],"매우 희귀한 방사성 원소로, 연구용으로만 쓰인다."],
+[92,"U","우라늄","Uranium",238.029,0,7,"actinide",[2,8,18,32,21,9,2],"원자력 발전의 연료가 되는 방사성 원소다."],
+[93,"Np","넵투늄","Neptunium",237,0,7,"actinide",[2,8,18,32,22,9,2],"해왕성(Neptune)에서 이름을 딴 인공 방사성 원소다."],
+[94,"Pu","플루토늄","Plutonium",244,0,7,"actinide",[2,8,18,32,24,8,2],"명왕성에서 이름을 땄으며, 우주 탐사선의 전력원으로 쓰인다."],
+[95,"Am","아메리슘","Americium",243,0,7,"actinide",[2,8,18,32,25,8,2],"가정용 연기 감지기에 쓰이는 인공 원소다."],
+[96,"Cm","퀴륨","Curium",247,0,7,"actinide",[2,8,18,32,25,9,2],"퀴리 부부를 기리는 이름의 인공 원소다."],
+[97,"Bk","버클륨","Berkelium",247,0,7,"actinide",[2,8,18,32,27,8,2],"미국 버클리 연구소에서 만든 인공 원소다."],
+[98,"Cf","캘리포늄","Californium",251,0,7,"actinide",[2,8,18,32,28,8,2],"중성자를 내뿜어 금속 탐지와 암 치료에 쓰인다."],
+[99,"Es","아인슈타이늄","Einsteinium",252,0,7,"actinide",[2,8,18,32,29,8,2],"아인슈타인을 기리는 이름으로, 수소폭탄 실험에서 발견됐다."],
+[100,"Fm","페르뮴","Fermium",257,0,7,"actinide",[2,8,18,32,30,8,2],"물리학자 페르미를 기리는 인공 원소다."],
+[101,"Md","멘델레븀","Mendelevium",258,0,7,"actinide",[2,8,18,32,31,8,2],"주기율표를 만든 멘델레예프를 기리는 원소다."],
+[102,"No","노벨륨","Nobelium",259,0,7,"actinide",[2,8,18,32,32,8,2],"노벨상의 주인공 노벨을 기리는 인공 원소다."],
+[103,"Lr","로렌슘","Lawrencium",266,0,7,"actinide",[2,8,18,32,32,8,3],"입자가속기를 발명한 로렌스를 기리는 원소다."],
+[104,"Rf","러더포듐","Rutherfordium",267,4,7,"transition",[2,8,18,32,32,10,2],"원자핵을 발견한 러더퍼드를 기리는 인공 원소다."],
+[105,"Db","더브늄","Dubnium",268,5,7,"transition",[2,8,18,32,32,11,2],"러시아 두브나 연구소에서 이름을 딴 인공 원소다."],
+[106,"Sg","시보귬","Seaborgium",269,6,7,"transition",[2,8,18,32,32,12,2],"살아있는 과학자(시보그)의 이름이 붙은 최초의 원소다."],
+[107,"Bh","보륨","Bohrium",270,7,7,"transition",[2,8,18,32,32,13,2],"원자 모형을 제안한 닐스 보어를 기리는 인공 원소다."],
+[108,"Hs","하슘","Hassium",277,8,7,"transition",[2,8,18,32,32,14,2],"독일 헤센 주에서 이름을 딴 인공 원소다."],
+[109,"Mt","마이트너륨","Meitnerium",278,9,7,"transition",[2,8,18,32,32,15,2],"핵분열을 설명한 리제 마이트너를 기리는 원소다."],
+[110,"Ds","다름슈타튬","Darmstadtium",281,10,7,"transition",[2,8,18,32,32,16,2],"독일 다름슈타트 연구소에서 만든 인공 원소다."],
+[111,"Rg","뢴트게늄","Roentgenium",282,11,7,"transition",[2,8,18,32,32,17,2],"X선을 발견한 뢴트겐을 기리는 인공 원소다."],
+[112,"Cn","코페르니슘","Copernicium",285,12,7,"transition",[2,8,18,32,32,18,2],"천문학자 코페르니쿠스를 기리는 인공 원소다."],
+[113,"Nh","니호늄","Nihonium",286,13,7,"post",[2,8,18,32,32,18,3],"아시아 최초로 일본에서 발견해 이름 붙인 원소다."],
+[114,"Fl","플레로븀","Flerovium",289,14,7,"post",[2,8,18,32,32,18,4],"러시아 플레로프 연구소의 이름을 딴 인공 원소다."],
+[115,"Mc","모스코븀","Moscovium",290,15,7,"post",[2,8,18,32,32,18,5],"러시아의 수도 모스크바에서 이름을 딴 인공 원소다."],
+[116,"Lv","리버모륨","Livermorium",293,16,7,"post",[2,8,18,32,32,18,6],"미국 리버모어 연구소의 이름을 딴 인공 원소다."],
+[117,"Ts","테네신","Tennessine",294,17,7,"halogen",[2,8,18,32,32,18,7],"미국 테네시 주에서 이름을 딴 인공 원소다."],
+[118,"Og","오가네손","Oganesson",294,18,7,"noble",[2,8,18,32,32,18,8],"물리학자 오가네시안을 기리는, 현재 가장 무거운 원소다."]
+];
+</script>
+<script>
+/* ───────── 주기율표 그리기 ───────── */
+const $ = s => document.querySelector(s);
+const ptable = $("#ptable"), ftable = $("#ftable");
+const SHELL_NAMES = ["K","L","M","N","O","P","Q"];
+const byNum = {}; E.forEach(e => byNum[e[0]] = e);
+
+function catColor(key){ return getComputedStyle(document.documentElement).getPropertyValue(CAT[key][1]).trim(); }
+
+function makeCell(e){
+  const [num,sym,nm,,,,,cat] = e;
+  const d = document.createElement("button");
+  d.className = "cell"; d.dataset.cat = cat; d.dataset.num = num;
+  d.style.setProperty("--c", `var(${CAT[cat][1]})`);
+  d.setAttribute("aria-label", `${num}번 ${nm}`);
+  d.innerHTML = `<span class="no">${num}</span><span class="sym">${sym}</span><span class="nm">${nm.split(" ")[0]}</span>`;
+  d.addEventListener("click", () => handleCellClick(num));
+  return d;
+}
+
+/* 축(족/주기 번호) */
+ptable.appendChild(Object.assign(document.createElement("div"),{className:"axis"}));
+for(let g=1; g<=18; g++){
+  const a = document.createElement("div"); a.className = "axis"; a.textContent = g;
+  a.style.gridColumn = g+1; a.style.gridRow = 1; ptable.appendChild(a);
+}
+for(let p=1; p<=7; p++){
+  const a = document.createElement("div"); a.className = "axis"; a.textContent = p;
+  a.style.gridColumn = 1; a.style.gridRow = p+1; ptable.appendChild(a);
+}
+
+/* 본체 (s, p, d 구역) */
+E.forEach(e => {
+  const [num,,,,,g,p] = e;
+  if(g === 0) return; // f-구역은 아래 별도 행
+  const c = makeCell(e);
+  c.style.gridColumn = g+1; c.style.gridRow = p+1;
+  ptable.appendChild(c);
+});
+
+/* 란타넘족/악티늄족 자리 표시 */
+function placeholder(label, range, col, row, catKey, target){
+  const d = document.createElement("button");
+  d.className = "cell ph"; d.style.setProperty("--c", `var(${CAT[catKey][1]})`);
+  d.style.gridColumn = col; d.style.gridRow = row;
+  d.innerHTML = `<b>${range}</b><span>${label}</span>`;
+  d.addEventListener("click", () => {
+    ftable.scrollIntoView({behavior:"smooth", block:"center"});
+    ftable.querySelectorAll(`.cell[data-cat="${catKey}"]`).forEach(c => {
+      c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash");
+    });
+  });
+  ptable.appendChild(d);
+}
+placeholder("란타넘족","57-71",4,7,"lanthanide");
+placeholder("악티늄족","89-103",4,8,"actinide");
+
+/* f-구역 두 줄 */
+const lanLabel = Object.assign(document.createElement("div"),{className:"flabel",textContent:"란타넘족 →"});
+lanLabel.style.gridRow = 1; ftable.appendChild(lanLabel);
+const actLabel = Object.assign(document.createElement("div"),{className:"flabel",textContent:"악티늄족 →"});
+actLabel.style.gridRow = 2; ftable.appendChild(actLabel);
+E.forEach(e => {
+  const num = e[0];
+  if(num >= 57 && num <= 71){ const c = makeCell(e); c.style.gridColumn = num-57+4; c.style.gridRow = 1; ftable.appendChild(c); }
+  if(num >= 89 && num <= 103){ const c = makeCell(e); c.style.gridColumn = num-89+4; c.style.gridRow = 2; ftable.appendChild(c); }
+});
+
+/* ───────── 범례 (클릭 시 해당 분류만 강조) ───────── */
+const legend = $("#legend");
+let activeCat = null;
+Object.entries(CAT).forEach(([key,[label,cvar]]) => {
+  const chip = document.createElement("button");
+  chip.className = "chip"; chip.innerHTML = `<i style="background:var(${cvar})"></i>${label}`;
+  chip.addEventListener("click", () => {
+    activeCat = (activeCat === key) ? null : key;
+    legend.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+    if(activeCat) chip.classList.add("active");
+    document.querySelectorAll(".cell:not(.ph)").forEach(c =>
+      c.classList.toggle("dim", activeCat !== null && c.dataset.cat !== activeCat));
+    document.querySelectorAll(".cell.ph").forEach(c => c.classList.toggle("dim", activeCat !== null));
+  });
+  legend.appendChild(chip);
+});
+
+/* ───────── 공통: 원소 속성 계산 ───────── */
+function propsOf(num){
+  const [n,sym,nm,en,mass,g,p,cat,shells,desc] = byNum[num];
+  const neutrons = Math.round(mass) - n;
+  const state = GAS.has(n) ? "기체" : LIQ.has(n) ? "액체" : (n >= 100 ? "고체 (추정)" : "고체");
+  const massTxt = SYN.has(n) ? `[${mass}]` : mass;
+  return {n,sym,nm,en,mass,g,p,cat,shells,desc,neutrons,state,massTxt};
+}
+function econfHTML(shells){
+  return shells.map((c,i) => `<b>${SHELL_NAMES[i]}</b>껍질 ${c}`).join(" · ");
+}
+
+/* ───────── 보어 모형 렌더러 (캔버스마다 독립 동작) ───────── */
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const t0 = performance.now();
+function makeAtomRenderer(cv){
+  const ctx = cv.getContext("2d");
+  const S = cv.width;                 /* 기준 크기(최초 width 속성) */
+  let animId = null;
+  function stop(){ if(animId){ cancelAnimationFrame(animId); animId = null; } }
+  function show(e){
+    stop();
+    const [n,,,,mass,,,cat,shells] = e;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = S*dpr; cv.height = S*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const cx = S/2, cy = S/2;
+    const nucR = Math.round(S*0.075);
+    const inner = Math.round(S*0.044);
+    const gap = (S/2 - Math.round(S*0.05) - nucR - inner) / shells.length;
+
+    function draw(now){
+      const t = (now - t0)/1000;
+      ctx.clearRect(0,0,S,S);
+
+      /* 전자 궤도 + 껍질 이름 */
+      shells.forEach((cnt,i) => {
+        const r = nucR + inner + gap*(i+1);
+        ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+        ctx.strokeStyle = "rgba(255,255,255,.13)"; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.35)";
+        ctx.font = `${Math.max(8, Math.round(S/32))}px 'Space Grotesk'`;
+        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+        ctx.fillText(SHELL_NAMES[i], cx, cy - r - 3);
+      });
+
+      /* 원자핵: 양성자 수를 +전하로 표기 */
+      const grad = ctx.createRadialGradient(cx-nucR/4,cy-nucR/4,2, cx,cy,nucR);
+      grad.addColorStop(0,"#ffd9a0"); grad.addColorStop(.6,"#ffb454"); grad.addColorStop(1,"#c97a1e");
+      ctx.shadowColor = "#ffb454"; ctx.shadowBlur = S/15;
+      ctx.beginPath(); ctx.arc(cx,cy,nucR,0,Math.PI*2); ctx.fillStyle = grad; ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#3a2200"; ctx.font = `700 ${Math.round(S/20)}px 'Space Grotesk'`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("+" + n, cx, cy);
+
+      /* 전자 */
+      shells.forEach((cnt,i) => {
+        const r = nucR + inner + gap*(i+1);
+        const w = reduceMotion ? 0 : 0.9 / Math.pow(i+1, .75);
+        for(let k=0; k<cnt; k++){
+          const a = t*w + (Math.PI*2*k)/cnt + i*0.6;
+          ctx.beginPath();
+          ctx.arc(cx + Math.cos(a)*r, cy + Math.sin(a)*r, Math.max(2.6, S/94), 0, Math.PI*2);
+          ctx.fillStyle = "#6ee7ff"; ctx.shadowColor = "#6ee7ff"; ctx.shadowBlur = 8;
+          ctx.fill(); ctx.shadowBlur = 0;
+        }
+      });
+
+      if(!reduceMotion) animId = requestAnimationFrame(draw);
+    }
+    if(reduceMotion) draw(performance.now());
+    else animId = requestAnimationFrame(draw);
+  }
+  return {show, stop};
+}
+
+/* ───────── 단일 원소 상세 모달 ───────── */
+const overlay = $("#overlay");
+const mainAtom = makeAtomRenderer($("#atom"));
+let current = null;
+
+function openModal(num){
+  current = num;
+  const P = propsOf(num);
+  $("#card").style.setProperty("--c", `var(${CAT[P.cat][1]})`);
+  $("#m-sym").textContent = P.sym;
+  $("#m-name").textContent = P.nm;
+  $("#m-en").textContent = `${P.en} · No.${P.n}`;
+  $("#m-cat").textContent = CAT[P.cat][0];
+  const rows = [
+    ["원자 번호", P.n], ["원자량", `${P.massTxt}${SYN.has(P.n) ? " <small>(불안정)</small>" : ""}`],
+    ["족", P.g === 0 ? "—" : P.g + "족"], ["주기", P.p + "주기"],
+    ["분류", CAT[P.cat][0]], ["실온 상태", P.state],
+    ["양성자 수", `${P.n}개`, "p"], ["중성자 수", `${P.neutrons}개`, "n"],
+    ["전자 수", `${P.n}개`, "e"], ["전자 껍질 수", `${P.shells.length}개`]
+  ];
+  $("#m-props").innerHTML = rows.map(([k,v,cls]) =>
+    `<div class="prop ${cls||""}"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+  $("#m-econf").innerHTML = "전자 배치 ⟶ " + econfHTML(P.shells);
+  $("#m-desc").textContent = P.desc;
+  overlay.classList.add("open");
+  mainAtom.show(byNum[num]);
+}
+function closeModal(){
+  overlay.classList.remove("open");
+  mainAtom.stop();
+  current = null;
+}
+$("#btn-close").addEventListener("click", closeModal);
+overlay.addEventListener("click", e => { if(e.target === overlay) closeModal(); });
+$("#btn-prev").addEventListener("click", () => openModal(current === 1 ? 118 : current-1));
+$("#btn-next").addEventListener("click", () => openModal(current === 118 ? 1 : current+1));
+
+/* ───────── 비교 모드 ───────── */
+const cmpOverlay = $("#cmp-overlay"), cmpBtn = $("#cmp-toggle"), hint = $("#hint");
+const rA = makeAtomRenderer($("#atom-a")), rB = makeAtomRenderer($("#atom-b"));
+let cmpMode = false, pickA = null;
+const pair = [null, null];
+
+function handleCellClick(num){
+  if(!cmpMode){ openModal(num); return; }
+  if(pickA === null){
+    pickA = num;
+    document.querySelector(`.cell[data-num="${num}"]`)?.classList.add("picked");
+    showHint(`${byNum[num][2].split(" ")[0]}(${byNum[num][1]}) 선택! 비교할 두 번째 원소를 클릭하세요`);
+  } else if(pickA === num){
+    clearPick(); showHint("비교할 첫 번째 원소를 클릭하세요");
+  } else {
+    const a = pickA; clearPick();
+    openCompare(a, num);
+  }
+}
+function clearPick(){
+  document.querySelectorAll(".cell.picked").forEach(c => c.classList.remove("picked"));
+  pickA = null;
+}
+function showHint(msg){ hint.textContent = msg; hint.classList.add("show"); }
+function hideHint(){ hint.classList.remove("show"); }
+
+cmpBtn.addEventListener("click", () => {
+  cmpMode = !cmpMode;
+  cmpBtn.classList.toggle("on", cmpMode);
+  document.body.classList.toggle("cmp-mode", cmpMode);
+  clearPick();
+  cmpMode ? showHint("비교할 첫 번째 원소를 클릭하세요") : hideHint();
+});
+
+function fillSide(idx, num){
+  pair[idx] = num;
+  const P = propsOf(num);
+  const root = $(idx === 0 ? "#cmp-a" : "#cmp-b");
+  root.style.setProperty("--c", `var(${CAT[P.cat][1]})`);
+  root.querySelector(".csym").textContent = P.sym;
+  root.querySelector(".cname").textContent = P.nm.split(" ")[0];
+  root.querySelector(".ccat").textContent = CAT[P.cat][0];
+  root.querySelector(".econf").innerHTML = econfHTML(P.shells);
+  (idx === 0 ? rA : rB).show(byNum[num]);
+  renderCmpTable();
+}
+function renderCmpTable(){
+  if(pair[0] == null || pair[1] == null) return;
+  const A = propsOf(pair[0]), B = propsOf(pair[1]);
+  const fmtMass = P => `${P.massTxt}${SYN.has(P.n) ? " (불안정)" : ""}`;
+  const rows = [
+    ["원자 번호", A.n, B.n],
+    ["원자량", fmtMass(A), fmtMass(B)],
+    ["족", A.g === 0 ? "—" : A.g + "족", B.g === 0 ? "—" : B.g + "족"],
+    ["주기", A.p + "주기", B.p + "주기"],
+    ["분류", CAT[A.cat][0], CAT[B.cat][0]],
+    ["실온 상태", A.state, B.state],
+    ["양성자 수", A.n + "개", B.n + "개"],
+    ["중성자 수", A.neutrons + "개", B.neutrons + "개"],
+    ["전자 수", A.n + "개", B.n + "개"],
+    ["전자 껍질 수", A.shells.length + "개", B.shells.length + "개"],
+    ["가장 바깥 껍질 전자", A.shells[A.shells.length-1] + "개", B.shells[B.shells.length-1] + "개"],
+    ["특징", A.desc, B.desc, true]
+  ];
+  $("#cmp-tbody").innerHTML = rows.map(([k,a,b,nodiff]) => {
+    const diff = !nodiff && String(a) !== String(b);
+    return `<tr><td>${k}</td><td class="${diff ? "diff" : ""}">${a}</td><td class="${diff ? "diff" : ""}">${b}</td></tr>`;
+  }).join("");
+  const ha = $("#cmp-ha"), hb = $("#cmp-hb");
+  ha.textContent = `${A.nm.split(" ")[0]} (${A.sym})`;
+  hb.textContent = `${B.nm.split(" ")[0]} (${B.sym})`;
+  ha.style.color = `var(${CAT[A.cat][1]})`;
+  hb.style.color = `var(${CAT[B.cat][1]})`;
+}
+function openCompare(a, b){
+  hideHint();
+  fillSide(0, a); fillSide(1, b);
+  cmpOverlay.classList.add("open");
+}
+function closeCompare(){
+  cmpOverlay.classList.remove("open");
+  rA.stop(); rB.stop();
+  if(cmpMode) showHint("비교할 첫 번째 원소를 클릭하세요");
+}
+$("#cmp-close").addEventListener("click", closeCompare);
+cmpOverlay.addEventListener("click", e => { if(e.target === cmpOverlay) closeCompare(); });
+cmpOverlay.querySelectorAll(".ttl .hbtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const side = +btn.dataset.side, dir = +btn.dataset.dir;
+    let next = pair[side] + dir;
+    if(next < 1) next = 118; if(next > 118) next = 1;
+    fillSide(side, next);
+  });
+});
+
+/* ───────── 키보드 조작 ───────── */
+document.addEventListener("keydown", e => {
+  if(cmpOverlay.classList.contains("open")){
+    if(e.key === "Escape") closeCompare();
+    return;
+  }
+  if(!overlay.classList.contains("open")) return;
+  if(e.key === "Escape") closeModal();
+  if(e.key === "ArrowLeft") $("#btn-prev").click();
+  if(e.key === "ArrowRight") $("#btn-next").click();
+});
+
+/* ───────── 전체 화면 ───────── */
+const fsBtn = $("#fs-btn");
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+async function toggleFS(){
+  try{
+    if(fsEl()){ await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen()); }
+    else{
+      const el = document.documentElement;
+      if(el.requestFullscreen) await el.requestFullscreen();
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else throw new Error("unsupported");
+    }
+  }catch(err){
+    showHint("이 화면에서는 전체 화면을 열 수 없어요. 브라우저에서 F11 키를 눌러 주세요.");
+    setTimeout(() => { if(!cmpMode) hideHint(); else showHint("비교할 첫 번째 원소를 클릭하세요"); }, 3500);
+  }
+}
+function fsChange(){
+  const on = !!fsEl();
+  $("#fs-label").textContent = on ? "전체 화면 끝내기" : "전체 화면";
+  fsBtn.setAttribute("aria-label", on ? "전체 화면 끝내기" : "전체 화면");
+  $("#fs-icon").setAttribute("d", on ? "M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" : "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5");
+}
+fsBtn.addEventListener("click", toggleFS);
+document.addEventListener("fullscreenchange", fsChange);
+document.addEventListener("webkitfullscreenchange", fsChange);
+document.addEventListener("keydown", e => {
+  if((e.key === "f" || e.key === "F") && !e.ctrlKey && !e.metaKey && !e.altKey) toggleFS();
+});
+</script>
+</body>
+</html>
