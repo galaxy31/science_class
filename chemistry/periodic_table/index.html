@@ -18,7 +18,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:radial-gradient(1200px 600px at 50% -10%, #1b2455 0%, var(--bg0) 60%);
   color:var(--txt); font-family:'Noto Sans KR',sans-serif; min-height:100%;}
-body{padding:22px 14px 40px}
+body{padding:22px 14px 18px}
 
 /* ───── 헤더 ───── */
 header{max-width:1180px;margin:0 auto 18px;text-align:center}
@@ -141,6 +141,11 @@ body.cmp-mode .cell:not(.ph){cursor:copy}
 .cmp-table td:first-child{color:var(--sub);text-align:left;white-space:nowrap}
 .cmp-table td.diff{color:#ffd57a;font-weight:700}
 
+/* ───── 화면 크기에 맞춰 키우기 ───── */
+.fit{max-width:1180px;margin:0 auto}
+.fit>header,.fit>.legend,.fit>.toolbar,.fit>.table-wrap{max-width:none}
+.card{zoom:var(--cz,1);max-height:calc(92vh / var(--cz,1))}
+
 /* ───── 전체 화면 버튼 ───── */
 .fs-btn{position:fixed;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));z-index:40;
   display:flex;align-items:center;gap:7px;min-height:44px;padding:0 15px;font-family:inherit;font-size:14px;font-weight:700;
@@ -160,6 +165,7 @@ body.cmp-mode .cell:not(.ph){cursor:copy}
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path id="fs-icon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
   <span id="fs-label">전체 화면</span>
 </button>
+<div class="fit" id="fit">
 <header>
   <h1>원소 주기율표 탐험<span class="dot"></span></h1>
   <p>원소 칸을 클릭하면 원자핵과 전자 궤도, 원소의 특징을 볼 수 있어요. 아래 범례를 누르면 같은 종류의 원소만 모아 볼 수 있습니다.</p>
@@ -171,6 +177,7 @@ body.cmp-mode .cell:not(.ph){cursor:copy}
 <div class="table-wrap">
   <div class="ptable" id="ptable"></div>
   <div class="ftable" id="ftable"></div>
+</div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -704,6 +711,23 @@ document.addEventListener("webkitfullscreenchange", fsChange);
 document.addEventListener("keydown", e => {
   if((e.key === "f" || e.key === "F") && !e.ctrlKey && !e.metaKey && !e.altKey) toggleFS();
 });
+
+/* ───────── 화면 크기에 맞춰 키우기 (넓은 화면·전자칠판) ───────── */
+const fit = $("#fit");
+function fitToScreen(){
+  fit.style.zoom = 1; fit.style.maxWidth = "";
+  const W = fit.offsetWidth, H = fit.offsetHeight;
+  const z = Math.min((innerWidth - 40) / W, (innerHeight - 40) / H);
+  const zz = z > 1 ? Math.min(z, 2.2) : 1;
+  /* 세로가 먼저 꽉 차면 남는 좌우 공간만큼 칸을 조금 넓힘 (최대 1.3배) */
+  if(zz > 1) fit.style.maxWidth = Math.min((innerWidth - 40) / zz, W * 1.3) + "px";
+  fit.style.zoom = zz;
+  document.documentElement.style.setProperty("--cz", Math.min(zz, 1.5));
+}
+addEventListener("resize", fitToScreen);
+document.addEventListener("fullscreenchange", () => setTimeout(fitToScreen, 60));
+if(document.fonts) document.fonts.ready.then(fitToScreen);
+fitToScreen();
 </script>
 </body>
 </html>
