@@ -81,6 +81,10 @@ details li{margin:3px 0}
 .big .k{font-size:13px;font-weight:700;color:var(--muted)}
 .big .v{font-family:var(--display);font-size:clamp(30px,2.8vw,44px);line-height:1.1;font-variant-numeric:tabular-nums}
 .big .f{font-size:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted);line-height:1.4}
+.legend div{display:flex;gap:8px;align-items:flex-start}
+.legend i{flex:none;width:18px;height:4px;border-radius:2px;margin-top:9px}
+.legend b{color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{min-height:48px;padding:0 12px;font-size:15px}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -226,6 +230,10 @@ svg.scope .q circle.b{animation:pulse 1s infinite alternate}
         <span class="k">배율 = 대물렌즈 초점 거리 ÷ 접안렌즈 초점 거리</span>
         <span class="v" id="magVal">90배</span>
         <span class="f" id="magF">900 mm ÷ 10 mm = 90</span>
+      </div>
+      <div class="legend">
+        <div><i style="background:#ffd36b"></i><span><b>노란 빛</b>: 비스듬히 들어온 빛 (예: 달의 가장자리) → 상이 가운데에서 벗어난 곳에 생겨요</span></div>
+        <div><i style="background:#5eead4"></i><span><b>청록 빛</b>: 똑바로 들어온 빛 (예: 달의 가운데) → 상이 가운데에 생겨요</span></div>
       </div>
       <div class="sec">
         <div class="slab"><span class="lbl">대물렌즈(주경) 초점 거리</span><span class="val" id="foVal">900 mm</span></div>
@@ -565,13 +573,13 @@ function draw2a(c,t){
   const g={xs:w*.015,x0:w*.15,ay:h*.5};const er=Math.min(18,h*.05);const avail=w-er*2-10-g.x0;
   g.fo=avail*lerp(.38,.6,(S.fo-400)/800);g.fe=avail*lerp(.07,.15,(S.fe-6)/19);
   const xe=g.x0+g.fo+g.fe,xp=xe+g.fe*(g.fo+g.fe)/g.fo;g.xEnd=xp+er*.8;
-  const Dp=lerp(h*.22,h*.46,(S.D2-50)/100),R=Dp/2,s=-.09,sp=Math.max(9,h*.05);
+  const Dp=lerp(h*.22,h*.46,(S.D2-50)/100),R=Dp/2,s=-.05,sp=Math.max(9,h*.05);
   const hs=[];for(let k=-Math.floor(R/sp);k<=Math.floor(R/sp);k++)hs.push(k*sp);
   const raysA=raysRefr(g,0,hs),raysB=raysRefr(g,s,hs);
-  const eh=(h*.23)*g.fe/g.fo+Math.abs(s)*(g.fo+g.fe)+10;
+  const eh=(h*.23)*g.fe/g.fo+Math.abs(s)*(g.fo+g.fe)+6;
   const lh=R+8,fx=g.x0+g.fo;
   ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.4)';ctx.lineWidth=2;
-  const th=Math.max(lh+6,eh+14);ctx.beginPath();ctx.rect(g.x0-12,g.ay-th,g.fo*.9+12,2*th);ctx.fill();ctx.stroke();
+  const th=Math.max(lh+6,eh+6);ctx.beginPath();ctx.rect(g.x0-12,g.ay-th,g.fo*.9+12,2*th);ctx.fill();ctx.stroke();
   ctx.beginPath();ctx.rect(g.x0+g.fo*.9,g.ay-eh-4,xe+8-g.x0-g.fo*.9,2*(eh+4));ctx.fill();ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.22)';ctx.setLineDash([2,6]);ctx.beginPath();ctx.moveTo(g.xs,g.ay);ctx.lineTo(w,g.ay);ctx.stroke();ctx.setLineDash([]);
   drawRays(ctx,raysA,1e9,null,RAY2,.28);
@@ -582,13 +590,15 @@ function draw2a(c,t){
   eye(ctx,xp+er-3,g.ay,'left',er);
   if(!small){
     pill(ctx,'들어오는 빛의 기울기',g.xs+4,g.ay-R-36,{fs,align:'left',color:'#ffe9a8'});
-    pill(ctx,'눈에 들어가는 빛의 기울기 (더 커요)',Math.min(w-10,xp+er*2+6),g.ay+Math.max(eh,er)+34,{fs,align:'right',color:'#ffe9a8'});
+    
   }
   const dy=g.ay+th+22;
+  if(!small)pill(ctx,'눈에 들어가는 빛의 기울기 (더 커요)',Math.min(w-10,xp+er*2+6),dy+22,{fs,align:'right',color:'#ffe9a8'});
   if(dy+34<h){ctx.strokeStyle='#93c5fd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(g.x0,dy);ctx.lineTo(fx,dy);ctx.moveTo(g.x0,dy-7);ctx.lineTo(g.x0,dy+7);ctx.moveTo(fx,dy-7);ctx.lineTo(fx,dy+7);ctx.stroke();
     pill(ctx,`대물렌즈 초점 거리 ${S.fo} mm`,(g.x0+fx)/2,dy+22,{fs,color:'#93c5fd'});}
   const dy2=g.ay-Math.max(eh,R*.6)-30;ctx.strokeStyle='#fda4af';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(fx,dy2);ctx.lineTo(xe,dy2);ctx.moveTo(fx,dy2-6);ctx.lineTo(fx,dy2+6);ctx.moveTo(xe,dy2-6);ctx.lineTo(xe,dy2+6);ctx.stroke();
   pill(ctx,`접안렌즈 ${S.fe} mm`,clamp((fx+xe)/2,60,w-70),dy2-20,{fs,color:'#fda4af'});
+  ctx.fillStyle=RAY2;ctx.shadowColor=RAY2;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(fx,g.ay,3.5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
   pill(ctx,'상',fx+10,g.ay-g.fo*s+18,{fs:fs-1,align:'left'});
 }
 /* 천체 그리기 (단위: 분(′)) */
