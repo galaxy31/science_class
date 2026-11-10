@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>굴절 망원경과 반사 망원경</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 4쪽 구성: ① 빛의 진행 ② 배율 ③ 각 부분 명칭 ④ 관측 순서 — 왼쪽 그림, 오른쪽 조작·설명 패널 (전자칠판 16:9 기준) */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{
+  --bg:#efede6; --panel:#ffffff; --ink:#221d14; --muted:#655d4e; --line:#ddd6c6; --chip:#f6f3ec;
+  --accent:#b45309; --ok:#0f766e; --bad:#b91c1c;
+  --display:"Do Hyeon","Noto Sans KR",system-ui,sans-serif;
+  --body:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#13110d; --panel:#1d1a14; --ink:#f1ebdf; --muted:#b2a891; --line:#332e24; --chip:#262219;
+  --accent:#f5a524; --ok:#2dd4bf; --bad:#f87171; color-scheme:dark}}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.eyebrow{font-size:13px;letter-spacing:.08em;color:var(--muted);font-weight:500}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(26px,2.6vw,38px);margin:0;line-height:1.1}
+.headR{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font-size:16px;padding:0 16px}
+.tabs button .n{font-family:var(--display);font-size:20px;margin-right:2px}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+button{font:inherit;font-weight:500;color:var(--ink);background:var(--chip);border:1.5px solid var(--line);border-radius:10px;min-height:48px;padding:0 14px;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;touch-action:manipulation}
+button:hover{border-color:var(--muted)}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.fs{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fs svg{width:20px;height:20px}
+.page{display:none;grid-template-columns:minmax(0,1fr) 390px;gap:12px;min-height:0}
+.page.on{display:grid}
+.left{display:grid;gap:12px;min-height:0}
+#p2 .left{grid-template-rows:minmax(0,1.1fr) minmax(0,1fr)}
+.stage{position:relative;border-radius:14px;overflow:hidden;min-height:0;border:1px solid var(--line);
+  background:radial-gradient(1.2px 1.2px at 12% 18%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 33% 72%,#fff6 50%,transparent 51%),
+  radial-gradient(1.4px 1.4px at 58% 12%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 81% 38%,#fff6 50%,transparent 51%),
+  radial-gradient(1.2px 1.2px at 91% 84%,#fff7 50%,transparent 51%),radial-gradient(1px 1px at 22% 90%,#fff5 50%,transparent 51%),
+  radial-gradient(1px 1px at 70% 60%,#fff5 50%,transparent 51%),linear-gradient(180deg,#0b1430,#070b1c)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.stage svg.scope{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cap{position:absolute;left:14px;top:10px;color:#f4ead2;font-size:16px;font-weight:700;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:2}
+.cap span{font-weight:500;opacity:.8;margin-left:6px}
+.foot{position:absolute;right:12px;bottom:8px;color:#c9c2b0;font-size:13px;pointer-events:none;z-index:2}
+aside{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;min-height:0}
+.lbl{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.sec{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:8px}
+.row>button{flex:1 1 0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+input[type=range]{width:100%;height:36px;accent-color:var(--accent);margin:0}
+.val{font-family:var(--display);font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.slab{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.note{font-size:14px;color:var(--muted);margin:0}
+hr{border:0;border-top:1px solid var(--line);margin:0}
+details{background:var(--chip);border-radius:10px;padding:8px 12px}
+summary{cursor:pointer;font-weight:700;font-size:15px;min-height:36px;display:flex;align-items:center}
+details ul{margin:6px 0 4px;padding-left:18px;font-size:15px}
+details li{margin:3px 0}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.steps button{width:100%;justify-content:flex-start;text-align:left;padding:8px 12px;min-height:52px;gap:10px;line-height:1.35}
+.steps .num{font-family:var(--display);font-size:22px;width:26px;flex:none;text-align:center;color:var(--muted)}
+.steps .tx b{display:block;font-size:16px}
+.steps .tx small{display:block;font-size:14px;color:var(--muted);font-weight:400}
+.steps button.done .num{color:var(--accent)}
+.steps button.now{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--chip))}
+.steps button.now .num{color:var(--accent)}
+.big{background:var(--chip);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.big .k{font-size:13px;font-weight:700;color:var(--muted)}
+.big .v{font-family:var(--display);font-size:clamp(30px,2.8vw,44px);line-height:1.1;font-variant-numeric:tabular-nums}
+.big .f{font-size:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:48px;padding:0 12px;font-size:15px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--chip);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.stat .k{font-size:12px;font-weight:700;color:var(--muted)}
+.stat .v{font-family:var(--display);font-size:24px;line-height:1.15;font-variant-numeric:tabular-nums}
+.warn{background:color-mix(in srgb,var(--bad) 14%,var(--chip));color:var(--ink);border-left:4px solid var(--bad);border-radius:8px;padding:8px 10px;font-size:14px}
+.okmsg{background:color-mix(in srgb,var(--ok) 14%,var(--chip));border-left:4px solid var(--ok);border-radius:8px;padding:8px 10px;font-size:14px}
+.card{background:var(--chip);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.card .t{font-family:var(--display);font-size:clamp(24px,2.1vw,32px);line-height:1.15;display:flex;gap:10px;align-items:center}
+.card .t .badge{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;flex:none}
+.card p{margin:0;font-size:17px}
+.card .tip{font-size:15px;color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.grid3 button{flex-direction:column;gap:0;padding:6px 4px;min-height:56px;font-size:14px;line-height:1.25}
+.grid3 button .num{font-family:var(--display);font-size:20px}
+.grid3 button.now{border-color:var(--accent);background:var(--accent);color:#fff}
+.grid3 button.past{border-color:var(--accent)}
+.quiz button.got{background:var(--ok);border-color:var(--ok);color:#fff}
+.quiz button.got .num{color:#fff}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.safety{position:absolute;left:12px;right:12px;bottom:10px;z-index:3;background:rgba(185,28,28,.92);color:#fff;border-radius:10px;padding:8px 12px;font-size:15px;font-weight:700;text-align:center}
+.inset{position:absolute;left:12px;top:44px;z-index:3;width:min(36%,300px);aspect-ratio:1/1;pointer-events:none}
+.inset canvas{position:absolute;inset:0;width:100%;height:100%}
+/* SVG 부품 강조 */
+svg.scope [data-part]{transition:opacity .35s}
+svg.scope [data-part].ghost{opacity:.1}
+#svg3 [data-part].hl{filter:url(#aglow)}
+#svg4 [data-part].hl{filter:url(#bglow)}
+svg.scope [data-part].hl :is(rect,circle,ellipse,path,polygon,line){stroke:#ffb020;stroke-width:3}
+svg.scope .spot{cursor:pointer}
+svg.scope .spot circle.b{fill:#b45309;stroke:#fff;stroke-width:2.5}
+svg.scope .spot.sel circle.b{fill:#f5a524}
+svg.scope .spot text{fill:#fff;font:700 18px var(--body);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+svg.scope .spot .lead{stroke:#fff;stroke-width:2;opacity:.7}
+svg.scope .q circle.b{animation:pulse 1s infinite alternate}
+@keyframes pulse{to{fill:#f5a524}}
+.toast{position:fixed;left:50%;bottom:max(20px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:16px;max-width:min(90vw,520px);text-align:center;z-index:9}
+@media (max-width:900px),(max-height:600px){
+  html,body{height:auto}.app{height:auto}
+  .page.on{grid-template-columns:minmax(0,1fr)}
+  .left{grid-template-rows:auto!important}
+  #s1{aspect-ratio:16/10}
+  #s2a{aspect-ratio:16/9}
+  #s2b{aspect-ratio:2/1}
+  #s3,#s4{aspect-ratio:4/3}
+  aside{overflow:visible}
+}
+@media (max-width:600px){
+  .cap span{display:none}
+  .tabs{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .headR{width:100%}
+  .fs{width:100%}
+  .safety{font-size:13px;padding:6px 8px}
+  .inset{width:42%;top:36px}
+  .foot{display:none}
+  #s1,#s2a{aspect-ratio:1/1}
+  #s2b{aspect-ratio:3/2}
+  #s3{aspect-ratio:1/1}
+  #s4{aspect-ratio:4/5}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <div class="eyebrow">과학 · 별과 우주 · 천체 망원경</div>
+      <h1>굴절 망원경과 반사 망원경</h1>
+    </div>
+    <div class="headR">
+      <nav class="tabs" role="tablist" aria-label="쪽 고르기">
+        <button role="tab" type="button" data-go="1" aria-selected="true"><span class="n">1</span>빛의 진행</button>
+        <button role="tab" type="button" data-go="2" aria-selected="false"><span class="n">2</span>배율</button>
+        <button role="tab" type="button" data-go="3" aria-selected="false"><span class="n">3</span>부분 명칭</button>
+        <button role="tab" type="button" data-go="4" aria-selected="false"><span class="n">4</span>관측 순서</button>
+      </nav>
+      <button class="fs" id="fsBtn" type="button" aria-label="전체 화면">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+        <span id="fsLabel">전체 화면</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ① 빛의 진행 -->
+  <section class="page on" id="p1" role="tabpanel">
+    <div class="left">
+      <div class="stage" id="s1">
+        <div class="cap" id="cap1">굴절 망원경 속 빛의 길 <span>빛 쏘기를 누르거나 단계를 눌러 보세요</span></div>
+        <canvas id="c1"></canvas>
+        <div class="foot">※ 이해를 돕기 위해 크기와 길이를 실제와 다르게 그렸어요.</div>
+      </div>
+    </div>
+    <aside>
+      <div class="sec">
+        <div class="lbl">망원경 종류</div>
+        <div class="seg">
+          <button type="button" data-type="refr" aria-pressed="true">굴절 망원경</button>
+          <button type="button" data-type="refl" aria-pressed="false">반사 망원경</button>
+        </div>
+      </div>
+      <div class="row">
+        <button type="button" id="play1" style="background:var(--accent);border-color:var(--accent);color:#fff">▶ 빛 쏘기</button>
+        <button type="button" id="reset1">처음부터</button>
+      </div>
+      <div class="sec">
+        <div class="lbl">빛이 지나가는 순서</div>
+        <ol class="steps" id="steps1"></ol>
+      </div>
+      <hr>
+      <div class="sec">
+        <div class="slab"><span class="lbl" id="apLbl">구경 (대물렌즈의 지름)</span><span class="val" id="apVal">80 mm</span></div>
+        <input type="range" id="ap1" min="50" max="200" step="10" value="80" aria-label="구경">
+        <div class="okmsg" id="apMsg"></div>
+      </div>
+      <details>
+        <summary>굴절 망원경과 반사 망원경 비교</summary>
+        <ul>
+          <li><b>굴절 망원경</b>: 볼록 렌즈(대물렌즈)로 빛을 <b>굴절</b>시켜 모아요. 경통이 막혀 있어 관리가 쉬워요. 큰 렌즈는 만들기 어렵고 무거워요.</li>
+          <li><b>반사 망원경</b>: 오목 거울(주경)로 빛을 <b>반사</b>시켜 모아요. 큰 거울을 만들기 쉬워 큰 천문대 망원경은 대부분 반사 망원경이에요.</li>
+          <li><b>공통점</b>: 빛을 모아 상을 만들고, 접안렌즈로 그 상을 확대해서 봐요.</li>
+        </ul>
+      </details>
+    </aside>
+  </section>
+
+  <!-- ② 배율 -->
+  <section class="page" id="p2" role="tabpanel">
+    <div class="left">
+      <div class="stage" id="s2a">
+        <div class="cap">기울어져 들어온 빛이 더 기울어져 나와요 <span>→ 물체가 더 크게 보여요</span></div>
+        <canvas id="c2a"></canvas>
+        <div class="foot">※ 길이는 실제와 다르게 그렸어요.</div>
+      </div>
+      <div class="stage" id="s2b">
+        <canvas id="c2b"></canvas>
+      </div>
+    </div>
+    <aside>
+      <div class="big">
+        <span class="k">배율 = 대물렌즈 초점 거리 ÷ 접안렌즈 초점 거리</span>
+        <span class="v" id="magVal">90배</span>
+        <span class="f" id="magF">900 mm ÷ 10 mm = 90</span>
+      </div>
+      <div class="sec">
+        <div class="slab"><span class="lbl">대물렌즈(주경) 초점 거리</span><span class="val" id="foVal">900 mm</span></div>
+        <input type="range" id="fo2" min="400" max="1200" step="50" value="900" aria-label="대물렌즈 초점 거리">
+      </div>
+      <div class="sec">
+        <div class="lbl">접안렌즈 초점 거리 (바꿔 끼우기)</div>
+        <div class="chips" id="feChips"></div>
+      </div>
+      <div class="sec">
+        <div class="slab"><span class="lbl">구경</span><span class="val" id="d2Val">80 mm</span></div>
+        <input type="range" id="d2" min="50" max="150" step="10" value="80" aria-label="구경">
+      </div>
+      <div class="sec">
+        <div class="lbl">관측할 천체</div>
+        <div class="chips" id="objChips">
+          <button type="button" data-obj="moon" aria-pressed="true">달</button>
+          <button type="button" data-obj="jupiter" aria-pressed="false">목성</button>
+          <button type="button" data-obj="saturn" aria-pressed="false">토성</button>
+        </div>
+      </div>
+      <div id="magMsg"></div>
+      <details>
+        <summary>배율에 대해 더 알아보기</summary>
+        <ul>
+          <li>대물렌즈 초점 거리가 <b>길수록</b>, 접안렌즈 초점 거리가 <b>짧을수록</b> 배율이 높아요.</li>
+          <li>배율이 높을수록 크게 보이지만, 보이는 하늘의 범위는 좁아지고 상이 어두워져요.</li>
+          <li>쓸 만한 가장 높은 배율은 대략 <b>구경(mm) × 2</b>예요. 이보다 높이면 흐릿해져요.</li>
+          <li>천체 망원경으로 보면 상의 위아래, 왼쪽 오른쪽이 뒤집혀 보여요.</li>
+          <li>반사 망원경도 주경의 초점 거리로 똑같이 배율을 구해요.</li>
+        </ul>
+      </details>
+    </aside>
+  </section>
+
+  <!-- ③ 각 부분의 명칭 -->
+  <section class="page" id="p3" role="tabpanel">
+    <div class="left">
+      <div class="stage" id="s3">
+        <div class="cap" id="cap3">굴절 망원경의 구조 <span>번호를 누르면 이름과 역할이 나와요</span></div>
+        <div id="svg3" style="position:absolute;inset:0"></div>
+      </div>
+    </div>
+    <aside>
+      <div class="sec">
+        <div class="lbl">망원경 종류</div>
+        <div class="seg">
+          <button type="button" data-type="refr" aria-pressed="true">굴절 망원경</button>
+          <button type="button" data-type="refl" aria-pressed="false">반사 망원경</button>
+        </div>
+      </div>
+      <div class="seg">
+        <button type="button" id="m3learn" aria-pressed="true">살펴보기</button>
+        <button type="button" id="m3quiz" aria-pressed="false">이름 맞히기</button>
+      </div>
+      <div class="card" id="partCard"></div>
+      <div class="sec">
+        <div class="lbl" id="chipLbl">부분 이름</div>
+        <div class="chips" id="partChips"></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ④ 관측 순서 -->
+  <section class="page" id="p4" role="tabpanel">
+    <div class="left">
+      <div class="stage" id="s4">
+        <div class="cap" id="cap4">망원경 설치와 관측 순서</div>
+        <div id="svg4" style="position:absolute;inset:0"></div>
+        <div class="inset" id="inset4" hidden><canvas id="c4"></canvas></div>
+        <div class="safety">⚠ 태양은 절대로 망원경이나 보조 망원경으로 보면 안 돼요. 눈을 크게 다칠 수 있어요.</div>
+      </div>
+    </div>
+    <aside>
+      <div class="seg">
+        <button type="button" id="m4learn" aria-pressed="true">순서 보기</button>
+        <button type="button" id="m4quiz" aria-pressed="false">순서 맞히기</button>
+      </div>
+      <div id="learn4" class="sec" style="gap:12px">
+        <div class="card" id="stepCard"></div>
+        <div class="row">
+          <button type="button" id="prev4">◀ 이전</button>
+          <button type="button" id="next4" style="background:var(--accent);border-color:var(--accent);color:#fff">다음 ▶</button>
+        </div>
+        <div class="grid3" id="grid4"></div>
+      </div>
+      <div id="quiz4" class="sec" hidden style="gap:12px">
+        <div class="okmsg" id="quizMsg">망원경을 설치하고 관측하는 순서대로 카드를 눌러 보세요.</div>
+        <div class="grid3 quiz" id="qgrid"></div>
+        <button type="button" id="qreset">다시 섞기</button>
+      </div>
+    </aside>
+  </section>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const RAY='#ffd36b', RAY2='#5eead4';
+
+/* ---------- 공통 상태 ---------- */
+const S={page:1,type:'refr',
+  front:0,target:0,flow:false,ap:80,
+  fo:900,fe:10,D2:80,obj:'moon',
+  part:null,quiz3:false,q3:null,q3score:0,q3n:0,
+  step:0,quiz4:false,qOrder:[],qGot:0};
+
+/* ---------- 캔버스 도우미 ---------- */
+function mkCanvas(cv,draw){
+  const c={cv,ctx:cv.getContext('2d'),w:0,h:0,draw};
+  const fit=()=>{const r=cv.getBoundingClientRect();if(!r.width)return;const d=Math.min(2,devicePixelRatio||1);
+    c.w=r.width;c.h=r.height;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);c.ctx.setTransform(d,0,0,d,0,0);c.draw(c,performance.now());};
+  new ResizeObserver(fit).observe(cv);c.fit=fit;return c;
+}
+function pill(ctx,text,x,y,o={}){
+  const fs=o.fs||15;ctx.font=`700 ${fs}px "Noto Sans KR",sans-serif`;
+  const w=ctx.measureText(text).width+16,h=fs+12;
+  let x0=o.align==='right'?x-w:o.align==='left'?x:x-w/2;const y0=y-h/2;
+  ctx.fillStyle=o.bg||'rgba(10,15,36,.82)';ctx.strokeStyle=o.stroke||'rgba(255,255,255,.35)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(x0,y0,w,h,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle=o.color||'#f4ead2';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(text,x0+8,y+1);
+  return {x0,y0,w,h};
+}
+function leader(ctx,x1,y1,x2,y2){ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.2;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);}
+function lens(ctx,x,y,half,thick,vertical){
+  ctx.save();ctx.translate(x,y);if(vertical)ctx.rotate(Math.PI/2);
+  ctx.beginPath();ctx.moveTo(0,-half);ctx.quadraticCurveTo(thick,0,0,half);ctx.quadraticCurveTo(-thick,0,0,-half);
+  ctx.fillStyle='rgba(147,197,253,.38)';ctx.fill();ctx.strokeStyle='#bfdbfe';ctx.lineWidth=2;ctx.stroke();ctx.restore();
+}
+function eye(ctx,x,y,dir,r){
+  ctx.save();ctx.translate(x,y);if(dir==='down')ctx.rotate(-Math.PI/2);
+  // 옆에서 본 눈: 왼쪽이 앞(빛이 들어오는 쪽)
+  ctx.fillStyle='#f5efe3';ctx.strokeStyle='#cbbfa6';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#6b4f2a';ctx.beginPath();ctx.ellipse(-r+3,0,4,r*.45,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(147,197,253,.6)';ctx.beginPath();ctx.ellipse(-r+9,0,4,r*.38,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#e57373';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,r-4,-.9,.9);ctx.stroke();
+  ctx.restore();
+}
+function polyLen(pts){const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));return cum;}
+function drawRays(ctx,rays,front,t,color,alpha=1){
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  for(const r of rays){
+    const L=r.cum[r.cum.length-1],f=Math.min(front,L);if(f<=0)continue;
+    ctx.beginPath();ctx.moveTo(r.pts[0][0],r.pts[0][1]);let hx=r.pts[0][0],hy=r.pts[0][1];
+    for(let i=1;i<r.pts.length;i++){
+      if(r.cum[i]<=f){ctx.lineTo(r.pts[i][0],r.pts[i][1]);hx=r.pts[i][0];hy=r.pts[i][1];}
+      else{const k=(f-r.cum[i-1])/(r.cum[i]-r.cum[i-1]);hx=lerp(r.pts[i-1][0],r.pts[i][0],k);hy=lerp(r.pts[i-1][1],r.pts[i][1],k);ctx.lineTo(hx,hy);break;}
+    }
+    ctx.globalAlpha=.85*alpha;ctx.strokeStyle=color;ctx.lineWidth=2.2;ctx.shadowColor=color;ctx.shadowBlur=8;ctx.stroke();
+    if(f>=L&&t!=null){ctx.globalAlpha=alpha;ctx.shadowBlur=0;ctx.strokeStyle='#fffbe8';ctx.lineWidth=2.4;ctx.setLineDash([6,22]);ctx.lineDashOffset=-t*0.09;ctx.stroke();ctx.setLineDash([]);}
+    else if(f<L){ctx.globalAlpha=1;ctx.shadowBlur=14;ctx.fillStyle='#fffbe8';ctx.beginPath();ctx.arc(hx,hy,3.6,0,Math.PI*2);ctx.fill();}
+  }
+  ctx.restore();
+}
+
+/* ---------- 광선 계산 (얇은 렌즈 근사) ---------- */
+// 굴절: x0 대물렌즈, fo, fe, 눈 쪽 끝. 높이 h는 위쪽이 +, 화면 y = axisY - h
+function raysRefr(g,s,heights){
+  const out=[];
+  for(const h of heights){
+    const p0=[g.xs,g.ay-(h-s*(g.x0-g.xs))],p1=[g.x0,g.ay-h];
+    const s1=s-h/g.fo,y2=h+s1*(g.fo+g.fe),xe=g.x0+g.fo+g.fe,p2=[xe,g.ay-y2];
+    const s2=s1-y2/g.fe,y3=y2+s2*(g.xEnd-xe),p3=[g.xEnd,g.ay-y3];
+    const pts=[p0,p1,p2,p3];out.push({pts,cum:polyLen(pts),y2});
+  }
+  return out;
+}
+// 반사(뉴턴식): 오른쪽 끝 주경(Mx), 45° 부경 중심 (Cx, ay). 펼친 길을 계산한 뒤 부경에서 접어요.
+function raysRefl(g,s,heights){
+  const out=[];const f=P=>(P[0]-g.Cx)-(P[1]-g.ay);const refl=P=>[g.Cx+(P[1]-g.ay),g.ay+(P[0]-g.Cx)];
+  for(const h of heights){
+    const p0=[g.xs,g.ay-(h-s*(g.Mx-g.xs))],p1=[g.Mx,g.ay-h];
+    const q=s-h/g.fo,uE=g.fo+g.fe,yE=h+q*uE,q2=q-yE/g.fe,uEnd=uE+g.eyeGap,yEnd=yE+q2*(uEnd-uE);
+    const un=[p1,[g.Mx-uE,g.ay-yE],[g.Mx-uEnd,g.ay-yEnd]];
+    const pts=[p0,p1];let folded=false;
+    for(let i=1;i<un.length;i++){
+      const A=un[i-1],B=un[i];
+      if(folded){pts.push(refl(B));continue;}
+      if(f(B)>=0){pts.push(B);continue;}
+      const t=f(A)/(f(A)-f(B)),I=[lerp(A[0],B[0],t),lerp(A[1],B[1],t)];pts.push(I,refl(B));folded=true;
+    }
+    out.push({pts,cum:polyLen(pts)});
+  }
+  return out;
+}
+
+/* ================= ① 빛의 진행 ================= */
+const STEPS1={
+  refr:[
+    ['별빛이 들어와요','아주 먼 별에서 온 빛은 거의 평행하게 들어와요.'],
+    ['대물렌즈가 빛을 모아요','볼록 렌즈가 빛을 굴절시켜 초점에 모아요. 이곳에 천체의 상이 생겨요.'],
+    ['접안렌즈가 상을 확대해요','접안렌즈(볼록 렌즈)가 돋보기처럼 상을 크게 확대해요.'],
+    ['눈으로 봐요','확대된 상이 눈에 들어와 크게 보여요.']],
+  refl:[
+    ['별빛이 들어와요','경통의 열린 쪽으로 평행한 별빛이 들어와요.'],
+    ['주경이 빛을 모아요','오목 거울(주경)이 빛을 반사시켜 한 점으로 모아요.'],
+    ['부경이 방향을 바꿔요','평면 거울(부경)이 빛을 옆으로 반사시켜 초점에 상이 생겨요.'],
+    ['접안렌즈로 확대해 봐요','접안렌즈가 상을 확대하고, 눈으로 봐요.']]
+};
+let G1=null,R1=[],T1=[];
+function geom1(c){
+  const W=c.w,H=c.h,t=S.type,D=S.ap;
+  if(t==='refr'){
+    const g={type:t,W,H,ay:H*.54,xs:W*.015,x0:W*.2};
+    const eyeX=W*.94,eyeGap=Math.min(80,W*.08);const xe=eyeX-eyeGap,tot=xe-g.x0;
+    g.fo=tot*.8;g.fe=tot*.2;g.xEnd=eyeX-14;g.eyeX=eyeX;g.eyeGap=eyeGap;
+    g.Dpx=lerp(H*.14,H*.56,(D-50)/150);
+    return g;
+  }
+  const g={type:t,W,H,xs:W*.015,Mx:W*.9,open:W*.17};
+  g.Dpx=lerp(H*.12,H*.38,(D-50)/150);g.tube=g.Dpx/2+14;
+  g.v=g.tube+H*.07;g.fo=(g.Mx-g.open)*.9;g.d=g.fo-g.v;g.Cx=g.Mx-g.d;
+  g.fe=H*.09;g.eyeGap=Math.min(56,H*.09);
+  const top=g.v+g.fe+g.eyeGap+Math.min(24,H*.045)+12,bot=g.tube+44;
+  g.ay=clamp((H+top-bot)/2,top+30,H-bot);
+  return g;
+}
+function secHalf(g){return g.Dpx/2*g.v/g.fo+8;}
+function heights1(g){
+  const sp=Math.max(9,g.H*.04),R=g.Dpx/2,n=Math.floor(R*.95/sp),hs=[];
+  for(let k=-n;k<=n;k++){const h=k*sp;
+    if(g.type==='refl'){if(Math.abs(h)<secHalf(g)+4)continue;}
+    hs.push(h);}
+  return hs;
+}
+function prep1(c){
+  G1=geom1(c);R1=G1.type==='refr'?raysRefr(G1,0,heights1(G1)):raysRefl(G1,0,heights1(G1));
+  const r=R1.reduce((a,b)=>a.cum.at(-1)>b.cum.at(-1)?a:b);const L1=Math.hypot(r.pts[1][0]-r.pts[0][0],r.pts[1][1]-r.pts[0][1]);
+  T1=G1.type==='refr'?[0,L1,L1+G1.fo,L1+G1.fo+G1.fe,r.cum.at(-1)]:[0,L1,L1+G1.d,L1+G1.fo,r.cum.at(-1)];
+  G1.max=Math.max(...R1.map(r=>r.cum.at(-1)));
+}
+function draw1(c,t){
+  const {ctx,w,h}=c;if(!w)return;
+  if(!G1||G1.W!==w||G1.H!==h||G1.type!==S.type||G1.ap!==S.ap){prep1(c);G1.ap=S.ap;}
+  const g=G1;ctx.clearRect(0,0,w,h);
+  const fs=clamp(w/62,12,17);
+  if(g.type==='refr'){
+    const R=g.Dpx/2,lh=R+8,xe=g.x0+g.fo+g.fe,eh=Math.max(16,R*g.fe/g.fo+12);
+    // 경통 (반투명 단면)
+    ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.45)';ctx.lineWidth=2;
+    const tEnd=g.x0+g.fo*.9;
+    ctx.beginPath();ctx.rect(g.x0-14,g.ay-lh-8,tEnd-g.x0+14,2*(lh+8));ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.rect(tEnd,g.ay-eh-6,xe+10-tEnd,2*(eh+6));ctx.fill();ctx.stroke();
+    // 초점면 점선
+    const fx=g.x0+g.fo;ctx.strokeStyle='rgba(255,255,255,.25)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(fx,g.ay-eh-4);ctx.lineTo(fx,g.ay+eh+4);ctx.stroke();ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(255,255,255,.18)';ctx.setLineDash([2,6]);ctx.beginPath();ctx.moveTo(g.xs,g.ay);ctx.lineTo(g.xEnd,g.ay);ctx.stroke();ctx.setLineDash([]);
+    drawRays(ctx,R1,S.front,S.flow?t:null,RAY);
+    lens(ctx,g.x0,g.ay,lh,Math.max(10,lh*.22));
+    lens(ctx,xe,g.ay,eh,Math.max(7,eh*.35));
+    eye(ctx,g.eyeX,g.ay,'left',Math.min(26,h*.05));
+    if(S.front>=T1[2]){ctx.fillStyle='#fff';ctx.shadowColor=RAY;ctx.shadowBlur=16;ctx.beginPath();ctx.arc(fx,g.ay,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+    // 이름표
+    const ly=g.ay-lh-30;
+    pill(ctx,'대물렌즈 (볼록 렌즈)',g.x0,ly,{fs});
+    pill(ctx,'경통',(g.x0+tEnd)/2,g.ay+lh+30,{fs});
+    pill(ctx,'초점 (상이 생기는 곳)',fx,g.ay+eh+40,{fs,color:'#ffe9a8'});leader(ctx,fx,g.ay+eh+28,fx,g.ay+7);
+    pill(ctx,'접안렌즈',xe,g.ay-eh-36,{fs});
+    pill(ctx,'눈',g.eyeX,g.ay+Math.min(26,h*.05)+22,{fs});
+    pill(ctx,'별빛 (평행 광선)',g.xs+4,g.ay+R+30,{fs,align:'left',color:'#ffe9a8'});
+  }else{
+    const R=g.Dpx/2,tb=g.tube,ay=g.ay;
+    ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.45)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.rect(g.open,ay-tb,g.Mx+16-g.open,2*tb);ctx.fill();ctx.stroke();
+    // 초점 조절 통 (위쪽)
+    const fy=ay-g.v,ey=fy-g.fe,ew=Math.max(16,R*g.fe/g.fo*1.4+14);
+    ctx.beginPath();ctx.rect(g.Cx-ew-6,ey-8,2*(ew+6),ay-tb-ey+8);ctx.fill();ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.18)';ctx.setLineDash([2,6]);ctx.beginPath();ctx.moveTo(g.xs,ay);ctx.lineTo(g.Mx,ay);ctx.stroke();ctx.setLineDash([]);
+    drawRays(ctx,R1,S.front,S.flow?t:null,RAY);
+    // 주경 (오목 거울)
+    const mh=R+10,sag=Math.max(8,mh*.16);
+    ctx.lineWidth=7;ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(g.Mx-sag,ay-mh);ctx.quadraticCurveTo(g.Mx+sag,ay,g.Mx-sag,ay+mh);ctx.stroke();
+    ctx.lineWidth=2;ctx.strokeStyle='#64748b';ctx.beginPath();ctx.moveTo(g.Mx-sag+6,ay-mh);ctx.quadraticCurveTo(g.Mx+sag+6,ay,g.Mx-sag+6,ay+mh);ctx.stroke();
+    // 부경 (평면 거울, 45°)
+    const sh=secHalf(g)*1.414;ctx.lineWidth=6;ctx.strokeStyle='#e2e8f0';
+    ctx.beginPath();ctx.moveTo(g.Cx-sh*.707,ay-sh*.707);ctx.lineTo(g.Cx+sh*.707,ay+sh*.707);ctx.stroke();
+    lens(ctx,g.Cx,ey,ew,Math.max(7,ew*.35),true);
+    eye(ctx,g.Cx,ey-g.eyeGap-6,'down',Math.min(24,h*.045));
+    if(S.front>=T1[2]+(g.v)*.9){ctx.fillStyle='#fff';ctx.shadowColor=RAY;ctx.shadowBlur=16;ctx.beginPath();ctx.arc(g.Cx,fy,5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;}
+    pill(ctx,'주경 (오목 거울)',g.Mx-8,ay+tb+28,{fs,align:'right'});
+    pill(ctx,'부경 (평면 거울)',g.Cx,ay+tb+28,{fs});leader(ctx,g.Cx,ay+tb+16,g.Cx+4,ay+8);
+    pill(ctx,'초점',g.Cx+ew+16,fy,{fs,align:'left',color:'#ffe9a8'});leader(ctx,g.Cx+ew+16,fy,g.Cx+6,fy);
+    pill(ctx,'접안렌즈',g.Cx+ew+16,ey,{fs,align:'left'});
+    pill(ctx,'눈',g.Cx+30,ey-g.eyeGap-6,{fs,align:'left'});
+    pill(ctx,'경통',(g.open+g.Cx)/2-30,ay-tb-22,{fs});
+    pill(ctx,'별빛 (평행 광선)',g.xs+4,ay-R-24<ay-tb-50?ay-tb-50:ay-R-24,{fs,align:'left',color:'#ffe9a8'});
+  }
+}
+function stepNow(){let k=0;for(let i=0;i<4;i++)if(S.front>=T1[i]+1)k=i;return k;}
+function renderSteps1(){
+  const ol=$('steps1');const st=STEPS1[S.type];
+  if(ol.children.length!==4){ol.innerHTML=st.map((_,i)=>`<li><button type="button" data-st="${i}"><span class="num">${i+1}</span><span class="tx"><b></b><small></small></span></button></li>`).join('');
+    ol.querySelectorAll('button').forEach(b=>b.onclick=()=>{const i=+b.dataset.st;S.front=T1[i];S.target=T1[i+1];S.flow=false;});}
+  const k=stepNow(),started=S.front>0;
+  ol.querySelectorAll('button').forEach((b,i)=>{b.querySelector('b').textContent=st[i][0];b.querySelector('small').textContent=st[i][1];
+    b.classList.toggle('now',started&&i===k&&!S.flow);b.classList.toggle('done',started&&(i<k||S.flow));});
+}
+$('play1').onclick=()=>{if(S.flow||S.front>=G1.max){S.front=0;}S.flow=false;S.target=Infinity;};
+$('reset1').onclick=()=>{S.front=0;S.target=0;S.flow=false;};
+function apText(){
+  const r=Math.round((S.ap/7)**2);
+  $('apLbl').textContent=S.type==='refr'?'구경 (대물렌즈의 지름)':'구경 (주경의 지름)';
+  $('apVal').textContent=S.ap+' mm';
+  $('apMsg').innerHTML=`사람 눈동자(약 7 mm)보다 빛을 약 <b>${r}배</b> 많이 모아요. 구경이 클수록 어두운 천체도 볼 수 있어요.`;
+}
+$('ap1').oninput=e=>{S.ap=+e.target.value;apText();};
+
+/* ================= ② 배율 ================= */
+const FE=[25,20,12.5,10,6];
+$('feChips').innerHTML=FE.map(f=>`<button type="button" data-fe="${f}" aria-pressed="${f===S.fe}">${f} mm</button>`).join('');
+$('feChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.fe=+b.dataset.fe;upd2();});
+$('objChips').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.obj=b.dataset.obj;upd2();});
+$('fo2').oninput=e=>{S.fo=+e.target.value;upd2();};
+$('d2').oninput=e=>{S.D2=+e.target.value;upd2();};
+const M=()=>S.fo/S.fe;
+function fmt(n){return Number.isInteger(n)?String(n):n.toFixed(1);}
+function upd2(){
+  const m=M();
+  $('magVal').textContent=fmt(Math.round(m*10)/10)+'배';
+  $('magF').textContent=`${S.fo} mm ÷ ${S.fe} mm = ${fmt(Math.round(m*10)/10)}`;
+  $('foVal').textContent=S.fo+' mm';$('d2Val').textContent=S.D2+' mm';
+  $('feChips').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.fe===S.fe));
+  $('objChips').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.obj===S.obj));
+  const maxM=S.D2*2;
+  $('magMsg').innerHTML=m>maxM?`<div class="warn">배율이 너무 높아요! 구경 ${S.D2} mm 망원경은 약 <b>${maxM}배</b>까지 쓸 만해요. 상이 어둡고 흐려져요.</div>`
+    :`<div class="okmsg">보이는 하늘의 범위: 약 <b>${(50/m).toFixed(m>40?2:1)}°</b> (달의 지름은 약 0.5°)</div>`;
+  C2a&&C2a.draw(C2a,performance.now());C2b&&C2b.draw(C2b);
+}
+let G2=null;
+function draw2a(c,t){
+  const {ctx,w,h}=c;if(!w)return;ctx.clearRect(0,0,w,h);
+  const small=w<560,fs=clamp(w/64,11,16);
+  const g={xs:w*.015,x0:w*.15,ay:h*.5};const er=Math.min(18,h*.05);const avail=w-er*2-10-g.x0;
+  g.fo=avail*lerp(.38,.6,(S.fo-400)/800);g.fe=avail*lerp(.07,.15,(S.fe-6)/19);
+  const xe=g.x0+g.fo+g.fe,xp=xe+g.fe*(g.fo+g.fe)/g.fo;g.xEnd=xp+er*.8;
+  const Dp=lerp(h*.22,h*.46,(S.D2-50)/100),R=Dp/2,s=-.09,sp=Math.max(9,h*.05);
+  const hs=[];for(let k=-Math.floor(R/sp);k<=Math.floor(R/sp);k++)hs.push(k*sp);
+  const raysA=raysRefr(g,0,hs),raysB=raysRefr(g,s,hs);
+  const eh=Math.max(...raysB.map(r=>Math.abs(r.y2)),...raysA.map(r=>Math.abs(r.y2)))+8;
+  const lh=R+8,fx=g.x0+g.fo;
+  ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.4)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.rect(g.x0-12,g.ay-lh-6,g.fo*.9+12,2*(lh+6));ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.rect(g.x0+g.fo*.9,g.ay-eh-4,xe+8-g.x0-g.fo*.9,2*(eh+4));ctx.fill();ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.22)';ctx.setLineDash([2,6]);ctx.beginPath();ctx.moveTo(g.xs,g.ay);ctx.lineTo(w,g.ay);ctx.stroke();ctx.setLineDash([]);
+  drawRays(ctx,raysA,1e9,null,RAY2,.28);
+  drawRays(ctx,raysB,1e9,t,RAY);
+  lens(ctx,g.x0,g.ay,lh,Math.max(10,lh*.22));lens(ctx,xe,g.ay,eh,Math.max(7,eh*.3));
+  ctx.fillStyle='#fff';ctx.shadowColor=RAY;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(fx,g.ay-g.fo*s,4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  // 기울기(각) 표시
+  eye(ctx,xp+er-3,g.ay,'left',er);
+  if(!small){
+    pill(ctx,'들어오는 빛의 기울기',g.xs+4,g.ay-R-36,{fs,align:'left',color:'#ffe9a8'});
+    pill(ctx,'눈에 들어가는 빛의 기울기 (더 커요)',Math.min(w-10,xp+er*2+6),g.ay+Math.max(eh,er)+34,{fs,align:'right',color:'#ffe9a8'});
+  }
+  const dy=g.ay+lh+28;
+  if(dy+34<h){ctx.strokeStyle='#93c5fd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(g.x0,dy);ctx.lineTo(fx,dy);ctx.moveTo(g.x0,dy-7);ctx.lineTo(g.x0,dy+7);ctx.moveTo(fx,dy-7);ctx.lineTo(fx,dy+7);ctx.stroke();
+    pill(ctx,`대물렌즈 초점 거리 ${S.fo} mm`,(g.x0+fx)/2,dy+22,{fs,color:'#93c5fd'});}
+  const dy2=g.ay-Math.max(eh,R*.6)-30;ctx.strokeStyle='#fda4af';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(fx,dy2);ctx.lineTo(xe,dy2);ctx.moveTo(fx,dy2-6);ctx.lineTo(fx,dy2+6);ctx.moveTo(xe,dy2-6);ctx.lineTo(xe,dy2+6);ctx.stroke();
+  pill(ctx,`접안렌즈 ${S.fe} mm`,clamp((fx+xe)/2,60,w-70),dy2-20,{fs,color:'#fda4af'});
+  pill(ctx,'상',fx+10,g.ay-g.fo*s+18,{fs:fs-1,align:'left'});
+}
+/* 천체 그리기 (단위: 분(′)) */
+function seeded(n){let x=n;return()=>((x=(x*16807)%2147483647)/2147483647);}
+const SKY=(()=>{const r=seeded(7);return Array.from({length:70},()=>({x:(r()-.5)*3000,y:(r()-.5)*3000,b:r()}));})();
+const CRATERS=(()=>{const r=seeded(11);return Array.from({length:60},()=>{const a=r()*Math.PI*2,d=Math.sqrt(r())*.9;return{x:Math.cos(a)*d,y:Math.sin(a)*d,r:.012+r()*.04};});})();
+function drawMoon(ctx,r){
+  const g=ctx.createRadialGradient(-r*.2,-r*.2,r*.1,0,0,r);g.addColorStop(0,'#ecebe4');g.addColorStop(1,'#b2ada0');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+  if(r<4)return;
+  ctx.save();ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.clip();
+  ctx.fillStyle='rgba(95,92,84,.45)';
+  for(const m of [[-.55,0,.3,.48],[-.25,-.38,.27,.21],[.18,-.36,.16,.14],[.32,-.06,.21,.17],[.68,-.3,.1,.09],[.55,.2,.12,.17],[.36,.32,.09,.09],[-.2,.45,.17,.12],[-.52,.45,.1,.09],[-.05,-.72,.45,.07]]){
+    ctx.beginPath();ctx.ellipse(m[0]*r,m[1]*r,m[2]*r,m[3]*r,0,0,Math.PI*2);ctx.fill();}
+  if(r>30){for(const c of CRATERS){ctx.strokeStyle='rgba(80,76,68,.35)';ctx.lineWidth=Math.max(.6,r*.006);ctx.beginPath();ctx.arc(c.x*r,c.y*r,c.r*r,0,Math.PI*2);ctx.stroke();}}
+  if(r>10){ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=Math.max(.8,r*.01);const tx=-.12*r,ty=.72*r;
+    for(let i=0;i<10;i++){const a=i/10*Math.PI*2;ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+Math.cos(a)*r*.5,ty+Math.sin(a)*r*.5);ctx.stroke();}
+    ctx.fillStyle='#fffdf5';ctx.beginPath();ctx.arc(tx,ty,r*.035,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(-.3*r,-.12*r,r*.03,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+function drawObj(ctx,cx,cy,R,mag,obj,rot,blur,alpha){
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+  ctx.fillStyle='#03050c';ctx.fillRect(cx-R,cy-R,2*R,2*R);
+  ctx.translate(cx,cy);if(rot)ctx.rotate(Math.PI);
+  const k=R*mag/1500;ctx.globalAlpha=alpha;if(blur>0.2)ctx.filter=`blur(${blur}px)`;
+  for(const s of SKY){const x=s.x*k,y=s.y*k;if(Math.abs(x)>R||Math.abs(y)>R)continue;ctx.fillStyle=`rgba(255,255,255,${.25+.5*s.b})`;ctx.beginPath();ctx.arc(x,y,.8+s.b*.8,0,Math.PI*2);ctx.fill();}
+  const dot=(x,y,c,rr=1.6)=>{ctx.fillStyle=c;ctx.shadowColor=c;ctx.shadowBlur=6;ctx.beginPath();ctx.arc(x,y,rr,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;};
+  if(obj==='moon'){const r=15.5*k;if(r<2)dot(0,0,'#f2efe4',Math.max(1.6,r));else drawMoon(ctx,r);}
+  else if(obj==='jupiter'){
+    const r=.367*k;
+    for(const [x,y] of [[1.8,.05],[-3.0,-.04],[4.6,.08],[-8.8,-.1]])dot(x*k,y*k,'#f3f0e6',1.4);
+    if(r<2.2)dot(0,0,'#f6e7c8',Math.max(2,r));else{
+      ctx.save();ctx.scale(1,.94);const gg=ctx.createLinearGradient(0,-r,0,r);
+      const st=[['#efe2c6',0],['#c9a37a',.3],['#efe2c6',.4],['#b9895d',.58],['#efe2c6',.7],['#d8c3a0',1]];st.forEach(([c,p])=>gg.addColorStop(p,c));
+      ctx.fillStyle=gg;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+      if(r>14){ctx.fillStyle='rgba(176,82,52,.75)';ctx.beginPath();ctx.ellipse(r*.35,r*.42,r*.13,r*.07,0,0,Math.PI*2);ctx.fill();}
+      ctx.restore();}
+  }else{
+    const r=.15*k,ro=.35*k;
+    if(ro<2.4)dot(0,0,'#f1e3b8',Math.max(1.8,ro));else{
+      const ring=(front)=>{ctx.save();ctx.scale(1,.36);ctx.lineWidth=Math.max(1.2,r*.45);ctx.strokeStyle='rgba(222,205,160,.95)';ctx.beginPath();
+        front?ctx.arc(0,0,ro*.84,0,Math.PI):ctx.arc(0,0,ro*.84,Math.PI,Math.PI*2);ctx.stroke();
+        ctx.lineWidth=Math.max(.6,r*.12);ctx.strokeStyle='rgba(190,170,125,.8)';ctx.beginPath();front?ctx.arc(0,0,ro*.62,0,Math.PI):ctx.arc(0,0,ro*.62,Math.PI,Math.PI*2);ctx.stroke();ctx.restore();};
+      ctx.save();ctx.rotate(-.18);ring(false);
+      const gg=ctx.createLinearGradient(0,-r,0,r);gg.addColorStop(0,'#e9d9a8');gg.addColorStop(.5,'#d4b97c');gg.addColorStop(1,'#bfa266');
+      ctx.fillStyle=gg;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();ring(true);ctx.restore();}
+  }
+  ctx.restore();
+  ctx.strokeStyle='#475569';ctx.lineWidth=4;ctx.beginPath();ctx.arc(cx,cy,R+2,0,Math.PI*2);ctx.stroke();
+}
+function draw2b(c){
+  const {ctx,w,h}=c;if(!w)return;ctx.clearRect(0,0,w,h);
+  const m=M(),fs=clamp(w/40,13,18);const R=Math.min(h*.36,w*.2);
+  const cy=h*.54,c1=w*.27,c2=w*.73;
+  drawObj(ctx,c1,cy,R,1,S.obj,false,0,1);
+  const maxM=S.D2*2,blur=m>maxM?clamp((m/maxM-1)*4,0,3):0,ep=S.D2/m,alpha=clamp(ep/1.4,.55,1);
+  drawObj(ctx,c2,cy,R,m,S.obj,true,blur,alpha);
+  pill(ctx,'맨눈으로 볼 때 (1배)',c1,cy-R-22,{fs});
+  pill(ctx,`망원경으로 볼 때 (${fmt(Math.round(m*10)/10)}배)`,c2,cy-R-22,{fs,color:'#ffe9a8'});
+  if(S.obj!=='moon')pill(ctx,m<60?'행성은 배율이 낮으면 점처럼 보여요':'행성은 달보다 훨씬 작게 보여요',c2,cy+R+20<h-10?cy+R+20:h-16,{fs:fs-2});
+  else pill(ctx,'상하좌우가 뒤집혀 보여요',c2,cy+R+20<h-10?cy+R+20:h-16,{fs:fs-2});
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font=`700 ${fs+8}px "Noto Sans KR",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('→',w*.5,cy);
+}
+
+/* ================= ③·④ 망원경 그림 (SVG) ================= */
+const ANG=-26,AR=ANG*Math.PI/180,UX=Math.cos(AR),UY=Math.sin(AR),PX=-UY,PY=UX;
+const DEC={x:468,y:322};
+const PARTS={
+  refr:[
+    ['objective','대물렌즈','빛을 모으는 볼록 렌즈예요. 클수록(구경이 클수록) 빛을 많이 모아 어두운 천체도 볼 수 있어요.'],
+    ['tube','경통','대물렌즈와 접안렌즈를 이어 주는 통이에요. 바깥의 불필요한 빛을 막아 줘요.'],
+    ['finder','보조 망원경 (파인더)','배율이 낮아 넓은 하늘이 보여요. 관측할 천체를 먼저 찾을 때 써요.'],
+    ['eyepiece','접안렌즈','대물렌즈가 만든 상을 확대해서 보는 렌즈예요. 눈을 대고 보는 곳이고, 바꿔 끼워 배율을 조절해요.'],
+    ['focus','초점 조절 나사','돌려서 접안렌즈를 앞뒤로 움직여 상을 선명하게 맞춰요.'],
+    ['mount','가대','경통을 받쳐 주고, 천체를 따라 경통을 위아래·좌우로 움직일 수 있게 해 줘요.'],
+    ['counter','균형추','경통 반대쪽에서 무게 균형을 맞춰 망원경이 한쪽으로 기울지 않게 해 줘요.'],
+    ['tripod','삼각대','망원경 전체를 흔들리지 않게 단단히 받쳐 줘요.']],
+  refl:[
+    ['primary','주경 (오목 거울)','경통 아래쪽에 있는 오목 거울이에요. 빛을 반사시켜 한 점에 모아요. 굴절 망원경의 대물렌즈 역할을 해요.'],
+    ['secondary','부경 (평면 거울)','주경이 모은 빛을 옆으로 반사시켜 접안렌즈 쪽으로 보내요.'],
+    ['tube','경통','주경과 부경이 들어 있는 통이에요. 위쪽 끝이 열려 있어 빛이 들어와요.'],
+    ['finder','보조 망원경 (파인더)','배율이 낮아 넓은 하늘이 보여요. 관측할 천체를 먼저 찾을 때 써요.'],
+    ['eyepiece','접안렌즈','부경이 보낸 빛이 만든 상을 확대해서 보는 렌즈예요. 경통 옆에 달려 있어요.'],
+    ['focus','초점 조절 나사','돌려서 접안렌즈를 움직여 상을 선명하게 맞춰요.'],
+    ['mount','가대','경통을 받쳐 주고, 천체를 따라 경통을 위아래·좌우로 움직일 수 있게 해 줘요.'],
+    ['counter','균형추','경통 반대쪽에서 무게 균형을 맞춰 망원경이 한쪽으로 기울지 않게 해 줘요.'],
+    ['tripod','삼각대','망원경 전체를 흔들리지 않게 단단히 받쳐 줘요.']]
+};
+function scopeGeo(type){
+  const R=type==='refr'?24:40,L=type==='refr'?400:340,off=R+8+16;
+  const TC={x:DEC.x-PX*off,y:DEC.y-PY*off};
+  const tw=(x,y)=>[TC.x+x*UX+y*PX,TC.y+x*UY+y*PY];
+  const dw=(x,y)=>[DEC.x+x*UX+y*PX,DEC.y+x*UY+y*PY];
+  return {R,L,TC,tw,dw};
+}
+function scopeSVG(type,px){
+  const {R,L,TC}=scopeGeo(type);const H=L/2;
+  const st='stroke="#0f172a" stroke-width="1.5"';
+  let tube='';
+  if(type==='refr'){
+    tube=`
+    <g data-part="tube"><rect x="${-H}" y="${-R}" width="${L-56}" height="${2*R}" rx="4" fill="url(#${px}Tube)" ${st}/>
+      <rect x="${H-62}" y="${-R-4}" width="66" height="${2*R+8}" rx="4" fill="url(#${px}Tube)" ${st}/>
+      <rect x="${-H-14}" y="${-R*.62}" width="16" height="${R*1.24}" rx="2" fill="#94a3b8" ${st}/></g>
+    <g data-part="objective"><ellipse cx="${H+4}" cy="0" rx="7" ry="${R+3}" fill="#7dd3fc" fill-opacity=".85" stroke="#e0f2fe" stroke-width="2"/></g>
+    <g data-part="focus"><rect x="${-H-60}" y="-9" width="48" height="18" fill="#cbd5e1" ${st}/>
+      <rect x="${-H-34}" y="8" width="6" height="12" fill="#64748b" ${st}/><circle cx="${-H-31}" cy="24" r="8" fill="#e2e8f0" ${st}/></g>
+    <g data-part="eyepiece"><rect x="${-H-94}" y="-12" width="36" height="24" rx="3" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+      <rect x="${-H-104}" y="-10" width="12" height="20" rx="3" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/></g>
+    <g data-part="finder"><rect x="-28" y="${-R-12}" width="6" height="12" fill="#64748b"/><rect x="40" y="${-R-12}" width="6" height="12" fill="#64748b"/>
+      <rect x="-50" y="${-R-27}" width="110" height="15" rx="3" fill="#e2e8f0" ${st}/><ellipse cx="61" cy="${-R-19.5}" rx="3" ry="7" fill="#7dd3fc"/>
+      <rect x="-64" y="${-R-24}" width="15" height="9" rx="2" fill="#334155"/></g>`;
+  }else{
+    tube=`
+    <g data-part="tube"><rect x="${-H}" y="${-R}" width="${L}" height="${2*R}" rx="4" fill="url(#${px}Tube)" ${st}/>
+      <rect x="${H-12}" y="${-R-3}" width="14" height="${2*R+6}" rx="2" fill="#94a3b8" ${st}/>
+      <rect x="${-H-12}" y="${-R+4}" width="14" height="${2*R-8}" rx="2" fill="#94a3b8" ${st}/>
+      <rect x="${-H+12}" y="${-R+9}" width="${L-30}" height="${2*R-18}" rx="3" fill="#0b1226" stroke="#475569" stroke-dasharray="4 3"/>
+      <path d="M${H-14} -20 L${-H+16} -20 L118 -3 L118 ${-R-30} M${H-14} 20 L${-H+16} 20 L122 3 L122 ${-R-30}" fill="none" stroke="${RAY}" stroke-opacity=".7" stroke-width="1.5" stroke-dasharray="5 4"/></g>
+    <g data-part="primary"><path d="M${-H+20} ${-R+10} Q${-H+6} 0 ${-H+20} ${R-10}" fill="none" stroke="#e2e8f0" stroke-width="6"/></g>
+    <g data-part="secondary"><line x1="111" y1="9" x2="129" y2="-9" stroke="#f8fafc" stroke-width="5"/><line x1="120" y1="0" x2="120" y2="${-R+9}" stroke="#64748b" stroke-width="1.5"/></g>
+    <g data-part="focus"><rect x="106" y="${-R-24}" width="28" height="24" fill="#cbd5e1" ${st}/><rect x="134" y="${-R-17}" width="10" height="6" fill="#64748b"/><circle cx="148" cy="${-R-14}" r="8" fill="#e2e8f0" ${st}/></g>
+    <g data-part="eyepiece"><rect x="107" y="${-R-56}" width="26" height="32" rx="3" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/><rect x="109" y="${-R-66}" width="22" height="12" rx="3" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/></g>
+    <g data-part="finder"><rect x="-100" y="${-R-12}" width="6" height="12" fill="#64748b"/><rect x="-40" y="${-R-12}" width="6" height="12" fill="#64748b"/>
+      <rect x="-122" y="${-R-27}" width="104" height="15" rx="3" fill="#e2e8f0" ${st}/><ellipse cx="-17" cy="${-R-19.5}" rx="3" ry="7" fill="#7dd3fc"/>
+      <rect x="-136" y="${-R-24}" width="15" height="9" rx="2" fill="#334155"/></g>`;
+  }
+  const rings=`<g data-part="mount"><rect x="-74" y="${R}" width="148" height="8" fill="#475569" ${st}/>
+    <rect x="-58" y="${-R-4}" width="12" height="${2*R+12}" rx="3" fill="#64748b" ${st}/><rect x="46" y="${-R-4}" width="12" height="${2*R+12}" rx="3" fill="#64748b" ${st}/></g>`;
+  return `<svg class="scope" viewBox="110 66 620 566" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="${px}Tube" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset=".55" stop-color="#e2e8f0"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+    <linearGradient id="${px}Leg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#94a3b8"/><stop offset="1" stop-color="#64748b"/></linearGradient>
+    <filter id="${px}glow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ffb020" flood-opacity=".95"/></filter>
+  </defs>
+  <ellipse cx="470" cy="610" rx="300" ry="14" fill="#ffffff" fill-opacity=".06"/>
+  <g data-part="tripod">
+    <polygon points="464,420 476,420 486,600 474,600" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>
+    <polygon points="452,416 466,420 340,612 324,608" fill="url(#${px}Leg)" stroke="#0f172a" stroke-width="1.5"/>
+    <polygon points="474,420 488,416 616,608 600,612" fill="url(#${px}Leg)" stroke="#0f172a" stroke-width="1.5"/>
+    <polygon points="404,512 536,512 470,500" fill="#64748b" stroke="#0f172a" stroke-width="1.5"/>
+    <rect x="436" y="404" width="68" height="16" rx="3" fill="#64748b" stroke="#0f172a" stroke-width="1.5"/>
+  </g>
+  <g data-part="counter" transform="translate(${DEC.x} ${DEC.y}) rotate(${ANG})">
+    <rect x="-3.5" y="0" width="7" height="158" fill="#cbd5e1" stroke="#0f172a" stroke-width="1.2"/>
+    <rect x="-24" y="104" width="48" height="32" rx="5" fill="#475569" stroke="#0f172a" stroke-width="1.5"/>
+    <rect x="-7" y="156" width="14" height="8" rx="2" fill="#94a3b8"/>
+  </g>
+  <g data-part="mount">
+    <rect x="446" y="382" width="48" height="24" rx="4" fill="#334155" stroke="#0f172a" stroke-width="1.5"/>
+    <rect x="456" y="324" width="38" height="78" rx="8" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.5" transform="rotate(-38 475 363)"/>
+    <circle cx="452" cy="390" r="7" fill="#94a3b8" stroke="#0f172a" stroke-width="1.2"/>
+    <g transform="translate(${DEC.x} ${DEC.y}) rotate(${ANG})"><rect x="-17" y="-16" width="34" height="46" rx="6" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5"/><rect x="-26" y="-16" width="52" height="10" fill="#64748b" stroke="#0f172a" stroke-width="1.5"/></g>
+  </g>
+  <g transform="translate(${TC.x} ${TC.y}) rotate(${ANG})">${rings}${tube}</g>
+  <g id="spots"></g>
+</svg>`;
+}
+// 번호 위치: [기준틀, x, y, 번호를 옮길 dx, dy]
+const SPOT={
+  refr:{objective:['t',204,0,40,-34],tube:['t',100,24,24,46],finder:['t',5,-46,-10,-40],eyepiece:['t',-286,0,-26,-42],focus:['t',-231,32,-10,40],
+    mount:['w',470,368,-64,10],counter:['d',0,120,50,6],tripod:['w',392,520,-44,-6]},
+  refl:{primary:['t',-160,0,-36,46],secondary:['t',120,0,42,30],tube:['t',40,-40,-4,-54],finder:['t',-70,-59,-14,-40],eyepiece:['t',120,-102,-46,-18],focus:['t',148,-54,42,-6],
+    mount:['w',470,368,-64,10],counter:['d',0,120,50,6],tripod:['w',392,520,-44,-6]}
+};
+function spotXY(type,id){
+  const g=scopeGeo(type),s=SPOT[type][id];
+  const a=s[0]==='t'?g.tw(s[1],s[2]):s[0]==='d'?g.dw(s[1],s[2]):[s[1],s[2]];
+  return {ax:a[0],ay:a[1],x:a[0]+s[3],y:a[1]+s[4]};
+}
+
+/* ---------- ③ 부분 명칭 ---------- */
+function build3(){
+  $('svg3').innerHTML=scopeSVG(S.type,'a');
+  $('cap3').firstChild.textContent=(S.type==='refr'?'굴절':'반사')+' 망원경의 구조 ';
+  const parts=PARTS[S.type];
+  $('partChips').innerHTML=parts.map(([id,n],i)=>`<button type="button" data-p="${id}"><b style="font-family:var(--display);font-size:18px">${i+1}</b>${n}</button>`).join('');
+  $('partChips').querySelectorAll('button').forEach(b=>b.onclick=()=>pick3(b.dataset.p));
+  if(S.part&&!parts.some(p=>p[0]===S.part))S.part=null;
+  if(S.quiz3)newQ3();else render3();
+}
+function render3(){
+  const parts=PARTS[S.type],sp=document.querySelector('#svg3 #spots');
+  const sel=S.quiz3?S.q3:S.part;
+  sp.innerHTML=parts.map(([id],i)=>{const p=spotXY(S.type,id);const q=S.quiz3;
+    if(q&&id!==S.q3)return '';
+    return `<g class="spot${id===sel?' sel':''}${q?' q':''}" data-p="${id}" role="button" tabindex="0" aria-label="${q?'문제':parts[i][1]}">
+      <line class="lead" x1="${p.ax}" y1="${p.ay}" x2="${p.x}" y2="${p.y}"/><circle cx="${p.ax}" cy="${p.ay}" r="3.5" fill="#fff"/>
+      <circle cx="${p.x}" cy="${p.y}" r="24" fill="transparent"/><circle class="b" cx="${p.x}" cy="${p.y}" r="17"/><text x="${p.x}" y="${p.y}">${q?'?':i+1}</text></g>`;}).join('');
+  if(!S.quiz3)sp.querySelectorAll('.spot').forEach(g=>{g.onclick=()=>pick3(g.dataset.p);g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick3(g.dataset.p);}};});
+  document.querySelectorAll('#svg3 [data-part]').forEach(el=>el.classList.toggle('hl',el.dataset.part===sel));
+  $('partChips').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',!S.quiz3&&b.dataset.p===S.part));
+  const card=$('partCard');
+  if(S.quiz3){
+    card.innerHTML=`<div class="t"><span class="badge">?</span>빛나는 부분의 이름은?</div><p>아래에서 알맞은 이름을 골라 보세요.</p><p class="tip">맞힌 개수: ${S.q3score} / ${S.q3n}</p>`;
+  }else if(S.part){
+    const i=parts.findIndex(p=>p[0]===S.part),p=parts[i];
+    card.innerHTML=`<div class="t"><span class="badge">${i+1}</span>${p[1]}</div><p>${p[2]}</p>`;
+  }else{
+    card.innerHTML=`<div class="t">어느 부분이 궁금한가요?</div><p>그림의 번호나 아래 이름을 누르면 그 부분이 빛나고, 하는 일이 나와요.</p>
+    <p class="tip">${S.type==='refr'?'굴절 망원경은 렌즈로 빛을 모아요.':'반사 망원경은 거울로 빛을 모아요. 경통 안이 보이게 그렸어요.'}</p>`;
+  }
+}
+function pick3(id){
+  if(S.quiz3){
+    const ok=id===S.q3;S.q3n++;if(ok)S.q3score++;
+    const name=PARTS[S.type].find(p=>p[0]===S.q3)[1];
+    toast(ok?`정답! ${name}`:`아쉬워요. 정답은 ‘${name}’이에요.`);
+    if(!ok){const b=$('partChips').querySelector(`[data-p="${id}"]`);b&&(b.classList.remove('shake'),void b.offsetWidth,b.classList.add('shake'));}
+    newQ3(S.q3);return;
+  }
+  S.part=S.part===id?null:id;render3();
+}
+function newQ3(prev){const ps=PARTS[S.type].map(p=>p[0]).filter(p=>p!==prev);S.q3=ps[Math.floor(Math.random()*ps.length)];render3();}
+$('m3learn').onclick=()=>{S.quiz3=false;$('m3learn').setAttribute('aria-pressed',true);$('m3quiz').setAttribute('aria-pressed',false);$('chipLbl').textContent='부분 이름';render3();};
+$('m3quiz').onclick=()=>{S.quiz3=true;S.q3score=0;S.q3n=0;$('m3quiz').setAttribute('aria-pressed',true);$('m3learn').setAttribute('aria-pressed',false);$('chipLbl').textContent='알맞은 이름 고르기';newQ3();};
+
+/* ---------- ④ 관측 순서 ---------- */
+const STEPS4=[
+  {s:'삼각대 펴기',t:'삼각대 펴기',d:'평평하고 단단한 곳에 삼각대를 펴요. 다리 길이를 조절해 윗부분이 수평이 되게 해요.',tip:'바닥이 기울어 있으면 망원경이 넘어질 수 있어요.',show:['tripod'],hl:['tripod']},
+  {s:'가대 올리기',t:'가대 올리기',d:'삼각대 위에 가대를 올리고 나사로 단단히 고정해요.',tip:'흔들리지 않는지 손으로 살짝 밀어 확인해요.',show:['tripod','mount'],hl:['mount']},
+  {s:'균형추 달기',t:'균형추 달기',d:'균형추 막대에 균형추를 끼워요. 경통보다 먼저 달아요.',tip:'경통을 먼저 올리면 한쪽으로 쏠려 넘어질 수 있어요.',show:['tripod','mount','counter'],hl:['counter']},
+  {s:'경통 올리기',t:'경통 올리기',d:'경통을 가대에 올려 고정해요. 균형추 위치를 옮겨 경통과 무게 균형을 맞춰요.',tip:'손을 놓아도 경통이 움직이지 않으면 균형이 맞은 거예요.',show:['tripod','mount','counter','tube','objective'],hl:['tube','objective']},
+  {s:'파인더·접안렌즈',t:'보조 망원경과 접안렌즈 끼우기',d:'보조 망원경을 경통에 달고 접안렌즈를 끼워요. 처음에는 배율이 낮은(초점 거리가 긴) 접안렌즈를 써요.',tip:'배율이 낮으면 넓은 하늘이 보여 천체를 찾기 쉬워요.',show:'all',hl:['finder','eyepiece','focus']},
+  {s:'파인더 맞추기',t:'보조 망원경 맞추기',d:'멀리 있는 물체를 망원경 시야 가운데에 둔 뒤, 보조 망원경의 십자선 가운데에도 오도록 조절해요.',tip:'밝은 낮에 먼 건물 꼭대기나 산봉우리로 맞추면 쉬워요.',show:'all',hl:['finder'],view:'align'},
+  {s:'천체 찾기',t:'천체 찾기',d:'보조 망원경으로 보면서 경통을 움직여 관측할 천체를 십자선 가운데에 오게 해요.',tip:'그러면 망원경 시야에도 천체가 들어와요.',show:'all',hl:['finder'],view:'find'},
+  {s:'초점 맞추기',t:'초점 맞추기',d:'접안렌즈를 보면서 초점 조절 나사를 천천히 돌려 상을 선명하게 해요.',tip:'흐려졌다 선명해졌다 하는 곳을 찾아 멈춰요.',show:'all',hl:['focus','eyepiece'],view:'focus'},
+  {s:'관측·기록',t:'관측하고 기록하기',d:'필요하면 배율이 높은 접안렌즈로 바꿔 자세히 보고, 본 모습을 그림과 글로 기록해요.',tip:'관측이 끝나면 렌즈 덮개를 씌우고, 설치의 반대 순서로 정리해요.',show:'all',hl:['eyepiece'],view:'record'}
+];
+function build4(){
+  $('svg4').innerHTML=scopeSVG('refr','b');
+  $('grid4').innerHTML=STEPS4.map((s,i)=>`<button type="button" data-i="${i}"><span class="num">${i+1}</span>${s.s}</button>`).join('');
+  $('grid4').querySelectorAll('button').forEach(b=>b.onclick=()=>{S.step=+b.dataset.i;render4();});
+  render4();
+}
+function render4(){
+  const st=S.quiz4?STEPS4[STEPS4.length-1]:STEPS4[S.step];
+  document.querySelectorAll('#svg4 [data-part]').forEach(el=>{
+    const p=el.dataset.part;const shown=st.show==='all'||st.show.includes(p);
+    el.classList.toggle('ghost',!shown);el.classList.toggle('hl',!S.quiz4&&st.hl.includes(p));});
+  if(S.quiz4){$('inset4').hidden=true;return;}
+  const s=STEPS4[S.step];
+  $('stepCard').innerHTML=`<div class="t"><span class="badge">${S.step+1}</span>${s.t}</div><p>${s.d}</p><p class="tip">💡 ${s.tip}</p>`;
+  $('grid4').querySelectorAll('button').forEach((b,i)=>{b.classList.toggle('now',i===S.step);b.classList.toggle('past',i<S.step);});
+  $('prev4').disabled=S.step===0;$('next4').disabled=S.step===STEPS4.length-1;
+  $('inset4').hidden=!s.view;S.viewT0=performance.now();
+  if(s.view)C4.fit();
+}
+$('prev4').onclick=()=>{if(S.step>0){S.step--;render4();}};
+$('next4').onclick=()=>{if(S.step<STEPS4.length-1){S.step++;render4();}};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newQuiz4(){
+  S.qGot=0;let o;do{o=shuffle(STEPS4.map((_,i)=>i));}while(o.every((v,i)=>v===i));S.qOrder=o;
+  $('qgrid').innerHTML=o.map(i=>`<button type="button" data-i="${i}"><span class="num">?</span>${STEPS4[i].s}</button>`).join('');
+  $('qgrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;if(b.classList.contains('got'))return;
+    if(i===S.qGot){b.classList.add('got');b.querySelector('.num').textContent=i+1;S.qGot++;
+      $('quizMsg').textContent=S.qGot===STEPS4.length?'모두 맞혔어요! 이제 실제 망원경으로 해 볼까요?':`좋아요! ${S.qGot}번째까지 맞혔어요. 다음 순서는?`;
+      if(S.qGot===STEPS4.length)toast('9단계를 모두 순서대로 맞혔어요!');}
+    else{b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake');toast(`${S.qGot+1}번째 순서가 아니에요. 다시 생각해 보세요.`);}
+  });
+  $('quizMsg').textContent='망원경을 설치하고 관측하는 순서대로 카드를 눌러 보세요.';
+}
+$('qreset').onclick=newQuiz4;
+$('m4learn').onclick=()=>{S.quiz4=false;$('m4learn').setAttribute('aria-pressed',true);$('m4quiz').setAttribute('aria-pressed',false);$('learn4').hidden=false;$('quiz4').hidden=true;render4();};
+$('m4quiz').onclick=()=>{S.quiz4=true;$('m4quiz').setAttribute('aria-pressed',true);$('m4learn').setAttribute('aria-pressed',false);$('learn4').hidden=true;$('quiz4').hidden=false;newQuiz4();render4();};
+function draw4(c,t){
+  const {ctx,w,h}=c;if(!w)return;ctx.clearRect(0,0,w,h);
+  const s=STEPS4[S.step];if(!s||!s.view)return;
+  const cx=w/2,cy=h/2+10,R=Math.min(w,h)/2-22,e=((t-(S.viewT0||0))/1000)%5,k=clamp(e/3,0,1),ease=1-(1-k)**3;
+  const fs=clamp(w/18,12,16);
+  ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
+  if(s.view==='align'){
+    const g=ctx.createLinearGradient(0,cy-R,0,cy+R);g.addColorStop(0,'#7cb8e8');g.addColorStop(1,'#cfe6f5');ctx.fillStyle=g;ctx.fillRect(cx-R,cy-R,2*R,2*R);
+    const ox=lerp(R*.55,0,ease),oy=lerp(-R*.35,0,ease);
+    ctx.fillStyle='#4b6a52';ctx.beginPath();ctx.moveTo(cx-R,cy+R*.55+oy);ctx.quadraticCurveTo(cx+ox-R*.3,cy+R*.2+oy,cx+ox,cy+R*.35+oy);ctx.quadraticCurveTo(cx+ox+R*.5,cy+R*.15+oy,cx+R,cy+R*.5+oy);ctx.lineTo(cx+R,cy+R);ctx.lineTo(cx-R,cy+R);ctx.fill();
+    ctx.fillStyle='#d9534f';ctx.fillRect(cx+ox-4,cy+oy-R*.02,8,R*.4);ctx.fillStyle='#fff';ctx.fillRect(cx+ox-4,cy+oy+R*.1,8,R*.08);
+    ctx.fillStyle='#d9534f';ctx.beginPath();ctx.arc(cx+ox,cy+oy,6,0,Math.PI*2);ctx.fill();
+  }else if(s.view==='find'){
+    ctx.fillStyle='#050816';ctx.fillRect(cx-R,cy-R,2*R,2*R);
+    for(const q of SKY.slice(0,30)){ctx.fillStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.arc(cx+q.x/1500*R,cy+q.y/1500*R,1.1,0,Math.PI*2);ctx.fill();}
+    ctx.save();ctx.translate(cx+lerp(-R*.55,0,ease),cy+lerp(R*.45,0,ease));drawMoon(ctx,R*.13);ctx.restore();
+  }else{
+    ctx.fillStyle='#03050c';ctx.fillRect(cx-R,cy-R,2*R,2*R);
+    let blur=0;if(s.view==='focus'){blur=e<3?Math.abs(Math.sin(e*1.6))*7*(1-ease)+ (1-ease)*2:0;}
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.PI);if(blur>.2)ctx.filter=`blur(${blur}px)`;drawMoon(ctx,R*.62);ctx.restore();
+  }
+  ctx.restore();
+  if(s.view==='align'||s.view==='find'){ctx.strokeStyle=s.view==='align'?'#111':'#f87171';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();}
+  ctx.strokeStyle='#94a3b8';ctx.lineWidth=5;ctx.beginPath();ctx.arc(cx,cy,R+2,0,Math.PI*2);ctx.stroke();
+  const lab={align:'보조 망원경 속 모습 (낮)',find:'보조 망원경 속 모습',focus:'접안렌즈 속 모습',record:'선명한 상을 관측해요'}[s.view];
+  pill(ctx,lab,cx,cy-R-12,{fs});
+}
+
+/* ---------- 쪽 이동·종류 전환 ---------- */
+const HASH=['','light','power','parts','steps'];
+function go(n){
+  S.page=n;document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('on',i+1===n));
+  document.querySelectorAll('[data-go]').forEach(b=>b.setAttribute('aria-selected',+b.dataset.go===n));
+  history.replaceState(null,'','#'+HASH[n]);
+}
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+function setType(t){
+  S.type=t;document.querySelectorAll('[data-type]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.type===t));
+  $('cap1').firstChild.textContent=(t==='refr'?'굴절':'반사')+' 망원경 속 빛의 길 ';
+  S.front=0;S.target=0;S.flow=false;G1=null;$('steps1').innerHTML='';apText();build3();
+}
+document.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>setType(b.dataset.type));
+
+/* ---------- 전체 화면·알림 ---------- */
+function toast(t){const el=$('toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,3000);}
+$('fsBtn').onclick=async()=>{try{if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+ else{const el=document.documentElement;if(el.requestFullscreen)await el.requestFullscreen();else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();else throw new Error('no');}}
+ catch(err){toast('이 화면에서는 전체 화면을 열 수 없어요. 브라우저에서 F11 키를 눌러 주세요.');}};
+const fsSync=()=>{const on=!!(document.fullscreenElement||document.webkitFullscreenElement);$('fsLabel').textContent=on?'전체 화면 끝내기':'전체 화면';
+  $('fsIcon').setAttribute('d',on?'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5':'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');};
+document.addEventListener('fullscreenchange',fsSync);document.addEventListener('webkitfullscreenchange',fsSync);
+
+/* ---------- 시작 ---------- */
+const C1=mkCanvas($('c1'),draw1),C2a=mkCanvas($('c2a'),draw2a),C2b=mkCanvas($('c2b'),draw2b),C4=mkCanvas($('c4'),draw4);
+apText();upd2();build3();build4();
+const h0=HASH.indexOf(location.hash.slice(1));go(h0>0?h0:1);
+let last=performance.now();
+function loop(t){
+  const dt=Math.min(50,t-last);last=t;
+  if(S.page===1&&G1){
+    if(!S.flow&&S.front<S.target){S.front+=dt*0.42;if(S.front>=S.target){S.front=Math.min(S.target,G1.max);if(S.front>=G1.max)S.flow=true;}}
+    C1.draw(C1,t);renderSteps1();
+  }else if(S.page===1)C1.draw(C1,t);
+  if(S.page===2)C2a.draw(C2a,t);
+  if(S.page===4&&!S.quiz4&&STEPS4[S.step].view)C4.draw(C4,t);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
