@@ -468,11 +468,11 @@ function draw1(c,t){
   const g=G1;ctx.clearRect(0,0,w,h);
   const fs=clamp(w/62,12,17);
   if(g.type==='refr'){
-    const R=g.Dpx/2,lh=R+8,xe=g.x0+g.fo+g.fe,eh=Math.max(16,R*g.fe/g.fo+12);
+    const R=g.Dpx/2,lh=R+8,xe=g.x0+g.fo+g.fe,eh=Math.max(16,(g.H*.28)*g.fe/g.fo+12);
     // 경통 (반투명 단면)
     ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.45)';ctx.lineWidth=2;
     const tEnd=g.x0+g.fo*.9;
-    ctx.beginPath();ctx.rect(g.x0-14,g.ay-lh-8,tEnd-g.x0+14,2*(lh+8));ctx.fill();ctx.stroke();
+    const th=Math.max(lh+8,eh+16);ctx.beginPath();ctx.rect(g.x0-14,g.ay-th,tEnd-g.x0+14,2*th);ctx.fill();ctx.stroke();
     ctx.beginPath();ctx.rect(tEnd,g.ay-eh-6,xe+10-tEnd,2*(eh+6));ctx.fill();ctx.stroke();
     // 초점면 점선
     const fx=g.x0+g.fo;ctx.strokeStyle='rgba(255,255,255,.25)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(fx,g.ay-eh-4);ctx.lineTo(fx,g.ay+eh+4);ctx.stroke();ctx.setLineDash([]);
@@ -485,7 +485,7 @@ function draw1(c,t){
     // 이름표
     const ly=g.ay-lh-30;
     pill(ctx,'대물렌즈 (볼록 렌즈)',g.x0,ly,{fs});
-    pill(ctx,'경통',(g.x0+tEnd)/2,g.ay+lh+30,{fs});
+    pill(ctx,'경통',(g.x0+tEnd)/2,g.ay+th+22,{fs});
     pill(ctx,'초점 (상이 생기는 곳)',fx,g.ay+eh+40,{fs,color:'#ffe9a8'});leader(ctx,fx,g.ay+eh+28,fx,g.ay+7);
     pill(ctx,'접안렌즈',xe,g.ay-eh-36,{fs});
     pill(ctx,'눈',g.eyeX,g.ay+Math.min(26,h*.05)+22,{fs});
@@ -495,7 +495,7 @@ function draw1(c,t){
     ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.45)';ctx.lineWidth=2;
     ctx.beginPath();ctx.rect(g.open,ay-tb,g.Mx+16-g.open,2*tb);ctx.fill();ctx.stroke();
     // 초점 조절 통 (위쪽)
-    const fy=ay-g.v,ey=fy-g.fe,ew=Math.max(16,R*g.fe/g.fo*1.4+14);
+    const fy=ay-g.v,ey=fy-g.fe,ew=Math.max(16,(g.H*.19)*g.fe/g.fo*1.4+14);
     ctx.beginPath();ctx.rect(g.Cx-ew-6,ey-8,2*(ew+6),ay-tb-ey+8);ctx.fill();ctx.stroke();
     ctx.strokeStyle='rgba(255,255,255,.18)';ctx.setLineDash([2,6]);ctx.beginPath();ctx.moveTo(g.xs,ay);ctx.lineTo(g.Mx,ay);ctx.stroke();ctx.setLineDash([]);
     drawRays(ctx,R1,S.front,S.flow?t:null,RAY);
@@ -568,10 +568,10 @@ function draw2a(c,t){
   const Dp=lerp(h*.22,h*.46,(S.D2-50)/100),R=Dp/2,s=-.09,sp=Math.max(9,h*.05);
   const hs=[];for(let k=-Math.floor(R/sp);k<=Math.floor(R/sp);k++)hs.push(k*sp);
   const raysA=raysRefr(g,0,hs),raysB=raysRefr(g,s,hs);
-  const eh=Math.max(...raysB.map(r=>Math.abs(r.y2)),...raysA.map(r=>Math.abs(r.y2)))+8;
+  const eh=(h*.23)*g.fe/g.fo+Math.abs(s)*(g.fo+g.fe)+10;
   const lh=R+8,fx=g.x0+g.fo;
   ctx.fillStyle='rgba(203,213,225,.07)';ctx.strokeStyle='rgba(203,213,225,.4)';ctx.lineWidth=2;
-  ctx.beginPath();ctx.rect(g.x0-12,g.ay-lh-6,g.fo*.9+12,2*(lh+6));ctx.fill();ctx.stroke();
+  const th=Math.max(lh+6,eh+14);ctx.beginPath();ctx.rect(g.x0-12,g.ay-th,g.fo*.9+12,2*th);ctx.fill();ctx.stroke();
   ctx.beginPath();ctx.rect(g.x0+g.fo*.9,g.ay-eh-4,xe+8-g.x0-g.fo*.9,2*(eh+4));ctx.fill();ctx.stroke();
   ctx.strokeStyle='rgba(255,255,255,.22)';ctx.setLineDash([2,6]);ctx.beginPath();ctx.moveTo(g.xs,g.ay);ctx.lineTo(w,g.ay);ctx.stroke();ctx.setLineDash([]);
   drawRays(ctx,raysA,1e9,null,RAY2,.28);
@@ -584,7 +584,7 @@ function draw2a(c,t){
     pill(ctx,'들어오는 빛의 기울기',g.xs+4,g.ay-R-36,{fs,align:'left',color:'#ffe9a8'});
     pill(ctx,'눈에 들어가는 빛의 기울기 (더 커요)',Math.min(w-10,xp+er*2+6),g.ay+Math.max(eh,er)+34,{fs,align:'right',color:'#ffe9a8'});
   }
-  const dy=g.ay+lh+28;
+  const dy=g.ay+th+22;
   if(dy+34<h){ctx.strokeStyle='#93c5fd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(g.x0,dy);ctx.lineTo(fx,dy);ctx.moveTo(g.x0,dy-7);ctx.lineTo(g.x0,dy+7);ctx.moveTo(fx,dy-7);ctx.lineTo(fx,dy+7);ctx.stroke();
     pill(ctx,`대물렌즈 초점 거리 ${S.fo} mm`,(g.x0+fx)/2,dy+22,{fs,color:'#93c5fd'});}
   const dy2=g.ay-Math.max(eh,R*.6)-30;ctx.strokeStyle='#fda4af';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(fx,dy2);ctx.lineTo(xe,dy2);ctx.moveTo(fx,dy2-6);ctx.lineTo(fx,dy2+6);ctx.moveTo(xe,dy2-6);ctx.lineTo(xe,dy2+6);ctx.stroke();
