@@ -75,7 +75,7 @@ window.SC = {
     },
     {
       "field": "earth_science",
-      "path": "moon_lab",
+      "path": "moon_phase",
       "title": "달 관측실 · 위상과 자전",
       "summary": "달을 움직이며 표면에 닿는 햇빛과 밤 쪽 관측자의 시선을 비교합니다. 관측 시간을 바꾸어 가시성을 확인하고, 동주기 자전·자전 없음·자전 2회를 나란히 탐구합니다.",
       "unit": "태양계",
