@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b1421"><meta name="description" content="달을 움직이며 햇빛 경로, 관측자의 시선, 위상 변화와 동주기 자전을 탐구하는 수업 도구"><title>달 관측실 · 위상과 자전</title>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b1421"><meta name="description" content="달을 움직이며 햇빛 경로, 관측자의 시선, 위상 변화와 동주기 자전을 탐구하는 수업 도구"><title>달의 위상</title>
 <style>
 :root{color-scheme:dark;--bg:#0b1421;--panel:#111f30;--line:#29394a;--text:#ecf0f2;--muted:#a3b2c1;--accent:#c5ed90;--sun:#ffd16e;--sight:#72d6ea;--red:#ffb2a2}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--bg);color:var(--text);font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;font-size:16px;line-height:1.5}button,input,select{font:inherit}button{cursor:pointer;min-height:48px;border:1px solid var(--line);border-radius:9px;padding:8px 15px;background:#182839;color:var(--text);font-weight:650;touch-action:manipulation}button:hover{background:#25374a}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,canvas:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button.primary{background:var(--accent);color:#162313;border-color:var(--accent)}button[aria-pressed=true]{border-color:var(--accent);background:#2a3e30;color:var(--accent)}a{color:var(--sight)}
@@ -99,7 +99,7 @@ dialog{max-width:730px;width:calc(100% - 32px);max-height:85vh;overflow:auto;bac
 }
 </style></head>
 <body><main class="app">
-<header><div class="brand"><div class="logo" aria-hidden="true"></div><div><div class="overline">ORBIT / SCIENCE STUDIO</div><h1>달 관측실</h1></div></div><div class="head-actions"><button id="guideBtn">수업 안내<span class="help-label"> ↗</span></button><button id="fullscreen">⛶ 전체 화면</button></div></header>
+<header><div class="brand"><div class="logo" aria-hidden="true"></div><div><div class="overline">ORBIT / SCIENCE STUDIO</div><h1>달의 위상</h1></div></div><div class="head-actions"><button id="guideBtn">수업 안내<span class="help-label"> ↗</span></button><button id="fullscreen">⛶ 전체 화면</button></div></header>
 <div class="navrow"><nav class="tabs" role="tablist" aria-label="탐구 주제"><button id="tabPhase" role="tab" aria-selected="true" aria-controls="phasePage"><b>01</b>위상 변화</button><button id="tabSpin" role="tab" aria-selected="false" aria-controls="spinPage" tabindex="-1"><b>02</b>같은 면을 보는 이유</button></nav><span class="navhint">움직여 보고, 시점을 바꿔 이해하는 달</span></div>
 <section id="phasePage" class="page" role="tabpanel" aria-labelledby="tabPhase">
 <div class="intro"><div><h2>같은 달, 달라지는 모양</h2><p>달을 움직여 햇빛을 받는 면과 우리가 보는 면을 비교해 보세요.</p></div><span class="tag">북극 쪽에서 내려다본 모형</span></div>
