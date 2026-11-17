@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b1421"><meta name="description" content="달을 움직이며 햇빛 경로, 관측자의 시선, 위상 변화와 동주기 자전을 탐구하는 수업 도구"><title>달 관측실 · 위상과 자전</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1421;--panel:#111f30;--line:#29394a;--text:#ecf0f2;--muted:#a3b2c1;--accent:#c5ed90;--sun:#ffd16e;--sight:#72d6ea;--red:#ffb2a2}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--bg);color:var(--text);font-family:"Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;font-size:16px;line-height:1.5}button,input,select{font:inherit}button{cursor:pointer;min-height:48px;border:1px solid var(--line);border-radius:9px;padding:8px 15px;background:#182839;color:var(--text);font-weight:650;touch-action:manipulation}button:hover{background:#25374a}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,canvas:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button.primary{background:var(--accent);color:#162313;border-color:var(--accent)}button[aria-pressed=true]{border-color:var(--accent);background:#2a3e30;color:var(--accent)}a{color:var(--sight)}
+.app{max-width:1800px;margin:auto;padding:18px 24px 10px;min-height:100svh;display:flex;flex-direction:column;gap:12px}header{display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;gap:13px;align-items:center}.logo{width:43px;height:43px;border-radius:50%;background:linear-gradient(90deg,#354255 50%,#c5ed90 50%);box-shadow:0 0 0 6px #c5ed908}.overline{color:var(--accent);font-size:11px;font-weight:750;letter-spacing:.17em}h1{font-size:27px;letter-spacing:-1.1px;line-height:1.35;margin:0}.head-actions{display:flex;gap:8px}.head-actions button{background:transparent;font-size:14px}.navrow{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:12px}.tabs{display:flex;gap:26px}.tabs button{background:none;border:0;border-bottom:3px solid transparent;border-radius:0;padding:11px 3px 13px;color:var(--muted);font-size:17px}.tabs button[aria-selected=true]{border-bottom-color:var(--accent);color:var(--text)}.tabs b{font-size:12px;color:var(--accent);margin-right:8px}.navhint{font-size:13px;color:var(--muted)}
+.page{display:flex;flex-direction:column;gap:12px}.intro{display:flex;justify-content:space-between;align-items:center;gap:12px}.intro h2{font-size:22px;font-weight:650;letter-spacing:-.6px;margin:0}.intro p{font-size:14px;color:var(--muted);margin:3px 0 0}.tag{border:1px solid var(--line);border-radius:25px;color:var(--muted);padding:6px 13px;font-size:12px;white-space:nowrap}.workspace{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr);gap:14px}.panel{border:1px solid var(--line);border-radius:15px;overflow:hidden;background:var(--panel);min-width:0}.panelhead{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between;gap:10px}.panelhead h3{font-size:16px;margin:0}.micro{font-size:12px;color:var(--muted)}.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}.legend span:before{content:"";display:inline-block;width:15px;height:2px;vertical-align:middle;margin-right:5px;background:var(--sun)}.legend span:last-child:before{background:var(--sight)}.orbit-wrap{height:clamp(260px,calc(100vh - 475px),510px);position:relative}.orbit-wrap canvas{width:100%;height:100%;display:block;touch-action:none}.orbit-wrap #orbit{cursor:grab}.orbit-wrap #orbit:active{cursor:grabbing}.canvas-note{position:absolute;bottom:7px;left:16px;right:16px;font-size:11px;color:#90a1b3;pointer-events:none}.toggles{padding:8px 16px;border-top:1px solid var(--line);display:flex;gap:16px;align-items:center;flex-wrap:wrap;min-height:50px}.toggles label{font-size:13px;display:flex;align-items:center;gap:7px;min-height:32px;cursor:pointer}.toggles input{width:17px;height:17px;accent-color:var(--accent)}.drag-tip{margin-left:auto;color:var(--muted);font-size:11px}
+.viewpanel{display:flex;flex-direction:column}.earth-view{height:clamp(140px,20vh,255px);background:radial-gradient(ellipse at 50% 60%,#24334a33,transparent 70%)}.earth-view canvas{display:block;width:100%;height:100%}.phase-info{padding:0 20px 9px}.phase-title{display:flex;align-items:baseline;gap:10px}.phase-title h3{font-size:29px;letter-spacing:-.7px;margin:0}.phase-title span{color:var(--accent);font-size:14px}.phase-info p{font-size:14px;color:var(--muted);margin:5px 0 0;min-height:42px}.observer{padding:9px 18px 12px;border-top:1px solid var(--line);margin-top:auto}.observer-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.observer label{font-size:13px;color:var(--muted)}select{background:#192b3d;color:var(--text);border:1px solid #3a4f62;border-radius:7px;min-height:48px;padding:6px;max-width:200px;font-size:13px}.status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--sight);margin-top:7px;min-height:20px}.status:before{content:"";width:6px;height:6px;flex:none;background:currentColor;border-radius:50%}.status.below{color:var(--red)}
+.timeline{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 15px}.transport{display:flex;align-items:center;gap:12px}.transport .play{min-width:112px}.iconbtn{font-size:19px;padding:5px 14px}.scrub{flex:1;min-width:0}.scrub-top{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:var(--muted)}.scrub-top output{color:var(--accent);font-variant-numeric:tabular-nums}input[type=range]{display:block;width:100%;height:28px;margin:0;accent-color:var(--accent);cursor:pointer}.speed{font-size:12px}.speed select{min-width:74px}.phase-list{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:8px}.phase-list button{min-height:54px;background:transparent;border-color:transparent;font-size:12px;padding:3px 2px;display:flex;align-items:center;justify-content:center;gap:7px}.phase-list button[aria-pressed=true]{border-color:#5e7c55;background:#c5ed9010;color:var(--accent)}.phase-list canvas{width:30px;height:30px;flex:none}.phase-list small{display:block;font-size:10px;color:var(--muted);font-weight:400}.insight{border-left:3px solid var(--accent);padding:2px 0 2px 12px;display:flex;align-items:baseline;gap:10px;font-size:14px;color:var(--muted)}.insight strong{color:var(--text);white-space:nowrap;font-weight:600}.bottom{margin-top:auto;display:flex;justify-content:space-between;gap:15px;color:#8193a6;font-size:11px}.bottom button{border:0;padding:0;background:none;min-height:30px;color:#a3b2c1;font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}.compare .orbit-wrap{height:clamp(230px,calc(100vh - 490px),430px)}.pill{font-size:12px;color:var(--accent);background:#c5ed9011;border:1px solid #c5ed9030;padding:4px 9px;border-radius:30px;white-space:nowrap}.pill.other{color:var(--sun);border-color:#ffd16e35;background:#ffd16e0b}.spin-footer{padding:9px 18px 12px;display:grid;grid-template-columns:92px 1fr;gap:15px;align-items:center;border-top:1px solid var(--line)}.spin-footer canvas{width:88px;height:88px}.spin-footer strong{font-size:17px}.spin-footer p{color:var(--muted);font-size:13px;margin:3px 0}.stat{font-size:12px;color:var(--accent)}.compare-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.mode-switch{display:flex;gap:5px}.mode-switch button{font-size:13px;padding:5px 10px}.spin-actions{display:flex;gap:6px;margin-left:5px}.spin-actions button{font-size:13px;padding:6px 10px}.reason{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;border:1px solid #c5ed9033;background:#c5ed9007;padding:12px 18px;border-radius:12px}.equation{font-weight:750;color:var(--accent);font-size:17px}.reason p{margin:0;font-size:13px;color:var(--muted)}
+dialog{max-width:730px;width:calc(100% - 32px);max-height:85vh;overflow:auto;background:#162435;color:var(--text);border:1px solid #4b6075;border-radius:17px;padding:25px;box-shadow:0 30px 100px #0008}dialog::backdrop{background:#020710bb;backdrop-filter:blur(5px)}dialog h2{margin:0 0 20px;font-size:25px}dialog h3{font-size:16px;color:var(--accent);margin-top:22px}dialog p,dialog li{font-size:14px;color:#c6d2dd}dialog ol,dialog ul{padding-left:23px}dialog .close{float:right}dialog table{width:100%;border-collapse:collapse;font-size:13px}dialog td,dialog th{padding:8px;border-bottom:1px solid #344557;text-align:left}#toast{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);background:#e2edda;color:#182a19;padding:12px 20px;border-radius:10px;z-index:10;max-width:90vw;font-size:14px}
+@media(min-width:1100px) and (max-height:800px){.app{padding:10px 20px 7px;gap:8px}.page{gap:8px}.intro h2{font-size:20px}.intro p{font-size:12px}.orbit-wrap{height:calc(100vh - 500px);min-height:225px}.earth-view{height:clamp(120px,17vh,145px)}.phase-info p{font-size:13px;min-height:38px}.phase-title h3{font-size:25px}.phase-list button{min-height:48px}.timeline{padding:8px 13px}.compare .orbit-wrap{height:calc(100vh - 490px);min-height:220px}.spin-footer{padding:5px 16px}.spin-footer canvas{height:74px;width:74px}.reason{padding:8px 15px}.panelhead{padding-top:10px}.observer{padding-top:6px;padding-bottom:8px}}
+@media(max-width:1000px){.app{padding:16px}.workspace{grid-template-columns:minmax(0,1.4fr) minmax(290px,1fr)}.legend,.tag,.navhint{display:none}.phase-list button{flex-direction:column;gap:2px}.phase-list small{display:none}.insight{display:block}.insight strong{margin-right:7px}.compare-title{gap:8px}.spin-actions{display:none}.reason{grid-template-columns:1fr;gap:5px}}
+@media(max-width:720px){.app{padding:15px 12px;gap:12px}header{align-items:center}.logo{width:31px;height:31px}.brand{gap:10px}h1{font-size:22px}.overline{font-size:9px}.head-actions{gap:5px}.head-actions button{font-size:12px;padding:5px 9px}.help-label{display:none}.tabs{gap:14px;justify-content:space-between;width:100%}.tabs button{font-size:14px;padding-bottom:10px}.tabs b{margin-right:5px}.intro h2{font-size:20px}.intro p{font-size:12px}.workspace,.compare{grid-template-columns:1fr}.orbit-wrap{height:350px}.earth-view{height:200px}.phase-info p{min-height:0}.observer{margin-top:4px}.transport{gap:7px;flex-wrap:wrap}.transport .play{min-width:98px;font-size:14px}.scrub{min-width:130px}.speed{display:none}.phase-list{grid-template-columns:repeat(4,1fr);gap:4px}.phase-list button{flex-direction:row;min-height:53px;font-size:12px}.phase-list small{display:block}.timeline{padding:11px}.toggles{gap:10px;padding:6px 12px}.drag-tip{font-size:10px}.compare .orbit-wrap{height:300px}.spin-footer{grid-template-columns:90px 1fr}.compare-title{flex-direction:column;align-items:flex-start}.compare-title h3{font-size:14px}.mode-switch button{font-size:11px;padding:4px 8px}.compare .pill{font-size:10px}.bottom{font-size:10px;align-items:center}.bottom>span{max-width:65%}.insight{font-size:13px}.reason p{font-size:12px}}
+
+/* Electronic whiteboard: use the entire viewport and give remaining space to the diagrams. */
+.app{max-width:none;width:100%;margin:0}
+@media (min-width:1000px) and (min-height:600px){
+  :root{--board-font:clamp(15px,1.05vw,28px)}
+  html,body{height:100%;overflow:hidden}
+  .app{height:100vh;height:100dvh;min-height:0;padding:8px 10px 5px;gap:8px;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}
+  header{gap:12px}
+  .brand{gap:12px}
+  h1{font-size:clamp(26px,1.8vw,48px)}
+  .overline{font-size:clamp(10px,.68vw,18px)}
+  .logo{width:clamp(34px,2.8vw,64px);height:clamp(34px,2.8vw,64px)}
+  .head-actions button{font-size:clamp(14px,.9vw,24px)}
+  .tabs{gap:clamp(20px,2vw,54px)}
+  .tabs button{font-size:clamp(16px,1.12vw,30px);padding:5px 3px 7px}
+  .tabs b{font-size:clamp(12px,.8vw,21px)}
+  .navhint{font-size:clamp(12px,.85vw,22px)}
+  .page{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;min-height:0;gap:8px}
+  .intro h2{font-size:clamp(20px,1.4vw,38px)}
+  .intro p{font-size:clamp(12px,.9vw,24px);margin-top:1px}
+  .tag{font-size:clamp(12px,.8vw,21px);padding:4px 12px}
+  .workspace{grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr)}
+  .workspace,.compare{height:100%;min-height:0;gap:10px}
+  .panel{display:flex;flex-direction:column;min-height:0;border-radius:12px}
+  .panelhead{flex:none;padding:10px 15px 0}
+  .panelhead h3{font-size:var(--board-font)}
+  .micro,.legend{font-size:clamp(11px,.8vw,21px)}
+  .orbit-wrap,.compare .orbit-wrap{height:auto;min-height:0;flex:1}
+  .orbit-wrap canvas{position:absolute;inset:0}
+  .canvas-note{font-size:clamp(10px,.75vw,20px);bottom:5px}
+  .toggles{flex:none;min-height:45px;padding:3px 14px;gap:clamp(12px,1.2vw,32px)}
+  .toggles label{font-size:clamp(12px,.9vw,24px);min-height:38px}
+  .toggles input{width:clamp(17px,1.2vw,30px);height:clamp(17px,1.2vw,30px)}
+  .drag-tip{font-size:clamp(10px,.75vw,20px)}
+  .earth-view{flex:1;min-height:0;height:auto;position:relative}
+  .earth-view canvas{position:absolute;inset:0}
+  .phase-info{flex:none;padding:0 18px 7px}
+  .phase-title h3{font-size:clamp(26px,2vw,54px)}
+  .phase-title span{font-size:var(--board-font)}
+  .phase-info p{font-size:clamp(13px,1.05vw,28px);min-height:0;margin-top:3px}
+  .observer{flex:none;margin-top:0;padding:6px 16px 8px}
+  .observer label{font-size:clamp(13px,.95vw,26px)}
+  select{max-width:none;min-height:48px;font-size:clamp(13px,.95vw,26px)}
+  .status{font-size:clamp(12px,.85vw,23px);margin-top:5px}
+  .timeline{padding:7px 12px;border-radius:11px}
+  .transport{gap:10px}
+  .transport button{font-size:clamp(15px,1.05vw,28px)}
+  .transport .play{min-width:clamp(112px,9vw,240px)}
+  .scrub-top{font-size:clamp(12px,.9vw,24px)}
+  input[type=range]{height:clamp(28px,2.2vw,56px)}
+  .speed{font-size:clamp(12px,.85vw,22px)}
+  .phase-list{margin-top:5px;gap:5px}
+  .phase-list button{min-height:48px;font-size:clamp(12px,.9vw,24px);padding:2px;gap:7px}
+  .phase-list small{font-size:clamp(10px,.68vw,18px)}
+  .phase-list canvas{width:clamp(30px,2.6vw,68px);height:clamp(30px,2.6vw,68px)}
+  .insight{font-size:clamp(13px,.95vw,26px);padding-top:0;padding-bottom:0}
+  .bottom{margin-top:0;font-size:clamp(10px,.7vw,18px);align-items:center}
+  .bottom button{font-size:clamp(10px,.75vw,20px);min-height:26px}
+  .spin-footer{flex:none;grid-template-columns:clamp(78px,6.2vw,168px) 1fr;gap:14px;padding:6px 16px 9px}
+  .spin-footer canvas{width:clamp(74px,6vw,160px);height:clamp(74px,6vw,160px)}
+  .spin-footer strong{font-size:clamp(16px,1.2vw,32px)}
+  .spin-footer p{font-size:clamp(12px,.95vw,26px)}
+  .stat{font-size:clamp(12px,.9vw,24px)}
+  .pill{font-size:clamp(11px,.85vw,22px)}
+  .mode-switch button,.spin-actions button{font-size:clamp(12px,.9vw,24px)}
+  .reason{padding:7px 15px;gap:16px}
+  .equation{font-size:clamp(16px,1.15vw,31px)}
+  .reason p{font-size:clamp(12px,.9vw,24px)}
+}
+@media (min-width:1000px) and (max-height:720px){
+  .app{gap:5px;padding:5px 7px 3px}.page{gap:5px}
+  .intro p,.navhint,.drag-tip{display:none}
+  .phase-info p{font-size:13px;line-height:1.4}
+  .panelhead{padding-top:6px}
+  .canvas-note{font-size:10px}
+  .phase-title h3{font-size:25px}
+  .phase-list button{min-height:48px}
+}
+
+@media (min-width:1000px) and (min-height:600px){
+  .app{position:relative;grid-template-rows:auto minmax(0,1fr) auto}
+  .navrow{position:absolute;top:clamp(8px,.7vw,20px);left:clamp(220px,20vw,440px);right:clamp(250px,24vw,560px);justify-content:center;border:0}
+  .navhint,.intro p{display:none}
+  .intro{min-height:32px}
+}
+</style></head>
+<body><main class="app">
+<header><div class="brand"><div class="logo" aria-hidden="true"></div><div><div class="overline">ORBIT / SCIENCE STUDIO</div><h1>달 관측실</h1></div></div><div class="head-actions"><button id="guideBtn">수업 안내<span class="help-label"> ↗</span></button><button id="fullscreen">⛶ 전체 화면</button></div></header>
+<div class="navrow"><nav class="tabs" role="tablist" aria-label="탐구 주제"><button id="tabPhase" role="tab" aria-selected="true" aria-controls="phasePage"><b>01</b>위상 변화</button><button id="tabSpin" role="tab" aria-selected="false" aria-controls="spinPage" tabindex="-1"><b>02</b>같은 면을 보는 이유</button></nav><span class="navhint">움직여 보고, 시점을 바꿔 이해하는 달</span></div>
+<section id="phasePage" class="page" role="tabpanel" aria-labelledby="tabPhase">
+<div class="intro"><div><h2>같은 달, 달라지는 모양</h2><p>달을 움직여 햇빛을 받는 면과 우리가 보는 면을 비교해 보세요.</p></div><span class="tag">북극 쪽에서 내려다본 모형</span></div>
+<div class="workspace">
+<section class="panel"><div class="panelhead"><h3>우주에서 바라보기</h3><div class="legend"><span>태양 빛</span><span>관측자의 시선</span></div></div><div class="orbit-wrap"><canvas id="orbit" tabindex="0" role="img" aria-label="달의 공전 모형. 드래그하거나 좌우 방향키로 달을 움직일 수 있습니다."></canvas><div class="canvas-note">크기·거리는 실제 비율이 아닙니다. 궤도 기울기와 월식은 생략합니다.</div></div><div class="toggles"><label><input id="rays" type="checkbox" checked>햇빛 경로</label><label><input id="sight" type="checkbox" checked>시선·지평선</label><label><input id="labels" type="checkbox" checked>이름</label><span class="drag-tip">궤도 클릭 · 달 드래그 ↔</span></div></section>
+<section class="panel viewpanel"><div class="panelhead"><h3>지구에서 바라보기</h3><span class="micro">북쪽이 위인 위상 모형</span></div><div class="earth-view"><canvas id="moonView" role="img" aria-label="지구에서 보이는 달의 위상"></canvas></div><div class="phase-info"><div class="phase-title"><h3 id="phaseName">상현달</h3><span id="litFraction">50% 밝음</span></div><p id="phaseDescription"></p></div><div class="observer"><div class="observer-top"><label for="observeTime">밤의 관측 위치</label><select id="observeTime"><option value="auto">위상에 맞춰 자동 이동</option><option value="18">18시 · 해 질 무렵</option><option value="21">21시 · 저녁</option><option value="24">0시 · 한밤중</option><option value="27">3시 · 새벽</option><option value="30">6시 · 해 뜰 무렵</option><option value="12">12시 · 낮과 비교</option></select></div><div id="visibility" class="status"></div></div></section>
+</div>
+<div class="timeline"><div class="transport"><button id="phasePlay" class="primary play" aria-pressed="false">▶ 자동 재생</button><button id="phaseReset" class="iconbtn" aria-label="위상 탐구 처음으로">↺</button><div class="scrub"><div class="scrub-top"><label for="phaseAngle">달의 위치</label><output id="phaseAngleText" for="phaseAngle">90° · 삭 이후 약 7.4일</output></div><input id="phaseAngle" type="range" min="0" max="360" step="0.5" value="90" aria-label="달의 위치 각도"></div><label class="speed">재생 속도 <select id="phaseSpeed" aria-label="위상 재생 속도"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div><div id="phaseList" class="phase-list" aria-label="대표 위상 선택"></div></div>
+<div class="insight"><strong>달의 반은 늘 밝아요.</strong><span>지구에서 볼 수 있는 밝은 부분의 비율이 달라져 위상이 변합니다.</span></div>
+</section>
+<section id="spinPage" class="page" role="tabpanel" aria-labelledby="tabSpin" hidden>
+<div class="intro"><div><h2>한 바퀴 공전할 때, 한 바퀴 자전</h2><p>달 표면의 A 지점을 따라가 보세요. 어느 경우에 A가 계속 지구를 향할까요?</p></div><span class="tag">자전은 먼 별을 기준으로 측정</span></div>
+<div class="compare">
+<section class="panel"><div class="panelhead"><h3>실제 달 · 동주기 자전</h3><span class="pill">공전 1회 = 자전 1회</span></div><div class="orbit-wrap"><canvas id="locked" role="img" aria-label="공전과 자전 주기가 같은 실제 달의 운동"></canvas><div class="canvas-note">A: 지구를 향하는 면의 표식 · 화살표: 달에 고정된 방향</div></div><div class="spin-footer"><canvas id="lockedFace" role="img" aria-label="지구에서 보는 실제 달의 A 표식"></canvas><div><strong>계속 같은 면이 보여요</strong><p>달은 자전하면서 A 방향을 지구 쪽으로 유지해요.</p><span id="lockedStat" class="stat"></span></div></div></section>
+<section class="panel"><div class="panelhead"><div class="compare-title"><h3>조건을 바꾸면?</h3><div class="mode-switch" aria-label="비교할 자전 조건"><button id="noSpin" aria-pressed="true">자전 없음</button><button id="doubleSpin" aria-pressed="false">자전 2회</button></div></div><span class="pill other" id="comparePill">공전 1회 · 자전 0회</span></div><div class="orbit-wrap"><canvas id="comparison" role="img" aria-label="자전하지 않는 가상의 달의 운동"></canvas><div class="canvas-note">A의 반대편에는 B가 있어요. 조명 효과는 생략한 모형입니다.</div></div><div class="spin-footer"><canvas id="comparisonFace" role="img" aria-label="지구에서 보이는 가상 달의 표식"></canvas><div><strong id="faceStatus">지금은 A가 정면이에요</strong><p id="compareDescription">자전하지 않으면 공전하는 동안 보이는 면이 달라져요.</p><span id="compareStat" class="stat"></span></div></div></section>
+</div>
+<div class="timeline"><div class="transport"><button id="spinPlay" class="primary play" aria-pressed="false">▶ 자동 재생</button><button id="spinReset" class="iconbtn" aria-label="자전 탐구 처음으로">↺</button><div class="scrub"><div class="scrub-top"><label for="spinAngle">공전 진행</label><output id="spinAngleText" for="spinAngle">0° · 0.00바퀴</output></div><input id="spinAngle" type="range" min="0" max="360" step="1" value="0" aria-label="공전 진행 각도"></div><div class="spin-actions"><button data-spin="90">¼ 바퀴</button><button data-spin="180">½ 바퀴</button><button data-spin="360">1 바퀴</button></div></div></div>
+<div class="reason"><div class="equation">자전 주기 = 공전 주기 ≈ 27.3일</div><p>같은 방향으로 같은 시간에 한 바퀴씩 돌아 거의 같은 면을 보게 됩니다.<br>위상이 반복되는 주기는 약 29.5일입니다. 그동안 지구도 태양 주위를 공전하기 때문이에요.</p></div>
+</section>
+<footer class="bottom"><span>SCIENCE STUDIO · 달의 위상과 운동을 위한 수업 모형</span><button id="notesBtn">모형의 범위 · 과학 자료 ↗</button></footer>
+</main>
+<dialog id="guide"><button class="close" id="closeGuide">닫기 ×</button><h2>달과 시점을 연결하는 수업</h2><h3>01 · 빛과 시선 따라가기</h3><ol><li><b>상현달</b>을 선택하고 노란 광선이 달의 오른쪽 표면에서 끝나는 것을 확인합니다.</li><li>하늘색 사람과 시선을 따라 지구에서 본 위상과 비교합니다. 노란색은 들어오는 햇빛, 하늘색은 사람이 바라보는 방향입니다.</li><li>관측 위치를 <b>0시</b>로 고정하고 초승달·보름달·그믐달을 선택합니다. 지평선 아래에 있는 달은 관측할 수 없음을 비교합니다.</li><li><b>삭</b>을 선택합니다. 지구를 향한 면이 어둡고 밤에는 지평선 아래에 있습니다.</li></ol><h3>02 · 자전하지 않아도 같은 면일까?</h3><ol><li>‘같은 면을 보는 이유’에서 공전 진행을 0° → 90° → 180°로 바꿉니다.</li><li>실제 달의 A 방향과 ‘자전 없음’의 A 방향을 비교합니다. 오른쪽에서는 반대편 B도 보입니다.</li><li>‘자전 2회’와도 비교하고, 같은 면을 보려면 어떤 관계가 필요한지 설명합니다.</li></ol><h3>조작 방법</h3><p>위상 버튼, 슬라이더, 궤도 클릭·드래그를 사용할 수 있습니다. 공전 모형에 초점을 맞추고 ← → 키를 누르면 달이 5°씩 이동합니다. 자동 재생은 다른 페이지로 이동하면 멈춥니다.</p></dialog>
+<dialog id="notes"><button class="close" id="closeNotes">닫기 ×</button><h2>모형을 읽을 때</h2><ul>
+<li>달의 위상은 <b>달의 밝은 반구를 보는 방향</b>에 따라 달라집니다. 평상시 위상 변화는 지구 그림자 때문이 아닙니다.</li>
+<li>지구·달 크기와 거리는 확대·축소한 개념도입니다. 노란 광선은 먼 태양에서 온 평행광 중 달에 닿는 일부를 표시합니다.</li>
+<li>실제 달의 궤도는 기울어져 있어 매달 일식·월식이 생기지 않습니다. 이 모형은 식 현상과 궤도 경사를 다루지 않습니다.</li>
+<li>위상 그림은 <b>달의 북쪽을 위로 놓은 모형</b>입니다. 실제 하늘에서 보이는 기울기는 관측 위치와 시간에 따라 달라집니다. 표면 무늬는 실제 지형 사진이 아닌 개념 표현입니다.</li>
+<li>관측 시간은 태양 방향으로 정한 <b>개념적 지방 태양시</b>입니다. 위도·계절·대기 굴절·시차를 생략했으므로 한국 표준시의 실제 출몰 시각 예측에 사용할 수 없습니다. 해 뜨고 지는 시각은 6시와 18시로 단순화했습니다.</li>
+<li>‘자동 이동’은 위상에 따라 밤 쪽에서 관측하기 좋은 위치를 선택합니다. 삭에서는 한밤중을 택해 관측 불가를 보여 줍니다. 파선은 지평선 아래 방향으로, 실제로 지구를 뚫어 볼 수 있다는 뜻이 아닙니다.</li>
+<li>관측할 수 없을 때도 오른쪽에는 비교용 위상 모형을 남기고 <b>관측 불가</b>를 표시합니다. 시선 화살표는 사람이 바라보는 방향이며, 반사된 빛의 진행 방향과 반대입니다.</li>
+<li>자전 페이지에서는 조명과 밝기 변화를 생략해 표면 방향만 비교합니다. ‘같은 면’은 이상적인 동주기 모형이며, 실제 달은 칭동으로 가장자리 부근이 조금씩 더 보입니다.</li></ul>
+<h3>서로 다른 두 주기</h3><table><thead><tr><th>약 27.3일</th><th>약 29.5일</th></tr></thead><tbody><tr><td>먼 별 기준의 공전·자전 주기</td><td>삭에서 다음 삭까지의 위상 주기</td></tr></tbody></table>
+<h3>내용 확인 자료</h3><p><a href="https://science.nasa.gov/moon/moon-phases/" target="_blank" rel="noopener noreferrer">NASA · Moon Phases</a><br><a href="https://science.nasa.gov/moon/facts/" target="_blank" rel="noopener noreferrer">NASA · Moon Facts</a></p><p>교과서의 위치 배치를 참고한 자체 제작 도식입니다. 첨부한 교과서 이미지는 앱에 재수록하지 않았습니다.</p></dialog>
+<div id="toast" role="status" hidden></div>
+<script>
+(function moonApp(){
+'use strict';
+const $=id=>document.getElementById(id),TAU=Math.PI*2,RAD=Math.PI/180;
+const phaseData=[
+{name:'삭',sub:'새달',description:'달이 태양과 같은 방향에 있어요. 지구를 향한 면이 어두워 달을 보기 어렵습니다.'},
+{name:'초승달',sub:'차오르는 달',description:'오른쪽의 가느다란 부분이 밝아요. 해가 진 뒤 서쪽 하늘에서 볼 수 있습니다.'},
+{name:'상현달',sub:'오른쪽 반달',description:'오른쪽 반이 밝아요. 해 질 무렵 높이 떠 있고, 한밤중 무렵에 집니다.'},
+{name:'차오르는 달',sub:'상현 → 망',description:'오른쪽부터 밝은 부분이 넓어져요. 보름달을 향해 둥글어지고 있습니다.'},
+{name:'보름달',sub:'망',description:'달이 태양의 반대 방향에 있어요. 밝은 면 전체가 보이고, 한밤중에 높이 떠요.'},
+{name:'기우는 달',sub:'망 → 하현',description:'오른쪽부터 어두워져요. 밝은 부분이 줄어들며 하현달을 향해 갑니다.'},
+{name:'하현달',sub:'왼쪽 반달',description:'왼쪽 반이 밝아요. 한밤중 무렵 떠서 해 뜰 무렵 높이 보입니다.'},
+{name:'그믐달',sub:'가느다란 달',description:'왼쪽의 가느다란 부분이 밝아요. 해가 뜨기 전 동쪽 하늘에서 볼 수 있습니다.'}
+];
+const state={page:'phase',phase:90,spin:0,compare:0,phasePlaying:false,spinPlaying:false,last:0};
+function norm(d){return (d%360+360)%360;}
+function phaseIndex(d){d=norm(d);if(d<.4||d>359.6)return 0;if(Math.abs(d-90)<.4)return 2;if(Math.abs(d-180)<.4)return 4;if(Math.abs(d-270)<.4)return 6;return d<90?1:d<180?3:d<270?5:7;}
+function observerModel(angle,selection){const a=norm(angle);let phi;if(selection==='auto')phi=(a<.4||a>359.6)?180:Math.max(100,Math.min(260,a));else phi=(Number(selection)-12)*15;const altitude=90-Math.abs(((a-phi+540)%360)-180);return {phi,altitude,visible:altitude>1,onHorizon:Math.abs(altitude)<=1,isNight:Math.cos(phi*RAD)<-0.001,hour:((phi/15+12)%24+24)%24};}
+function lightFraction(deg){return (1-Math.cos(deg*RAD))/2;}
+function spinDelta(orbit,ratio){return (ratio-1)*orbit*RAD;}
+function canvasScale(){return window.innerWidth>=1000&&window.innerHeight>=600?Math.max(1,Math.min(3,window.innerWidth/1280,window.innerHeight/720)):1;}
+function fit(canvas){const b=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2),scale=canvasScale(),pw=Math.max(1,Math.round(b.width)),ph=Math.max(1,Math.round(b.height));if(canvas.width!==Math.round(pw*dpr)||canvas.height!==Math.round(ph*dpr)){canvas.width=Math.round(pw*dpr);canvas.height=Math.round(ph*dpr);}const c=canvas.getContext('2d');c.setTransform(dpr*scale,0,0,dpr*scale,0,0);const w=pw/scale,h=ph/scale;c.clearRect(0,0,w,h);return {c,w,h};}
+function circle(c,x,y,r,fill,stroke){c.beginPath();c.arc(x,y,r,0,TAU);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.stroke();}}
+function line(c,x1,y1,x2,y2,color,width=1,dash=[]){c.save();c.strokeStyle=color;c.lineWidth=width;c.setLineDash(dash);c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.restore();}
+function arrow(c,x1,y1,x2,y2,color,width=1.5,head=6,dash=[]){line(c,x1,y1,x2,y2,color,width,dash);const a=Math.atan2(y2-y1,x2-x1);c.fillStyle=color;c.beginPath();c.moveTo(x2,y2);c.lineTo(x2-head*Math.cos(a-.45),y2-head*Math.sin(a-.45));c.lineTo(x2-head*Math.cos(a+.45),y2-head*Math.sin(a+.45));c.closePath();c.fill();}
+function text(c,t,x,y,size=12,color='#a3b2c1',align='center',weight=400){c.font=`${weight} ${size}px "Malgun Gothic",system-ui,sans-serif`;c.fillStyle=color;c.textAlign=align;c.textBaseline='middle';c.fillText(t,x,y);}
+function stars(c,w,h){for(let i=0;i<55;i++){const x=(Math.sin(i*127.13)*.5+.5)*w,y=(Math.cos(i*91.7)*.5+.5)*h;circle(c,x,y,i%8===0?1:.65,`rgba(182,205,226,${i%3===0?.25:.11})`);}}
+// Orthographic sphere, z towards Earth. Incident sunlight direction is (sin(a),0,-cos(a)).
+const texture=document.createElement('canvas');texture.width=texture.height=240;
+const texCtx=texture.getContext('2d'),pixels=texCtx.createImageData(240,240);
+const craters=[[-.37,.12,.27],[-.05,-.37,.25],[.31,-.27,.18],[-.46,-.29,.16],[.15,.16,.20],[.40,.40,.12],[-.17,.49,.1]];
+const normals=new Float32Array(240*240*3),albedos=new Float32Array(240*240);
+for(let y=0;y<240;y++)for(let x=0;x<240;x++){const nx=(x-119.5)/118,ny=(y-119.5)/118,r2=nx*nx+ny*ny,k=y*240+x;if(r2>1)continue;const nz=Math.sqrt(1-r2);normals[k*3]=nx;normals[k*3+1]=ny;normals[k*3+2]=nz;let val=202+10*Math.sin(x*1.82+y*2.17)+5*Math.cos(x*.41-y*.72);for(const [cx,cy,r]of craters){const d=Math.hypot(nx-cx,ny-cy);if(d<r)val-=32*(.7+.3*Math.cos(d/r*Math.PI));if(Math.abs(d-r)<.012)val+=13;}albedos[k]=val;}
+function moonImage(c,x,y,r,deg,plain=false){const a=deg*RAD,sx=Math.sin(a),sz=-Math.cos(a),d=pixels.data;for(let k=0;k<240*240;k++){if(!albedos[k]){d[k*4+3]=0;continue;}const dot=normals[k*3]*sx+normals[k*3+2]*sz,light=plain?.83:dot>0?.65+.35*Math.sqrt(dot):.075,v=albedos[k]*light;d[k*4]=v;d[k*4+1]=v*1.015;d[k*4+2]=v*1.035;d[k*4+3]=255;}texCtx.putImageData(pixels,0,0);c.drawImage(texture,x-r,y-r,2*r,2*r);circle(c,x,y,r,null,'#93a6bb22');}
+function topMoon(c,x,y,r){c.save();circle(c,x,y,r,'#25313f');c.beginPath();c.arc(x,y,r,-Math.PI/2,Math.PI/2);c.closePath();c.fillStyle='#dbe0de';c.fill();c.save();c.beginPath();c.arc(x,y,r,0,TAU);c.clip();for(const [cx,cy,rr]of craters)circle(c,x+cx*r,y+cy*r,rr*r,cx>0?'#8594a644':'#101a2644');c.restore();circle(c,x,y,r,null,'#9aacbb44');c.restore();}
+function earth(c,x,y,r){c.save();circle(c,x,y,r,'#3d8bb6');c.beginPath();c.arc(x,y,r,0,TAU);c.clip();c.fillStyle='#78ad97';c.beginPath();c.moveTo(x-r*.7,y-r*.75);c.bezierCurveTo(x+r*.7,y-r*.9,x-r*.3,y-r*.1,x+r*.4,y);c.bezierCurveTo(x+r*.9,y+r*.25,x-r*.4,y+r*.7,x-r*.15,y+r);c.lineTo(x-r,y+r);c.closePath();c.fill();for(let i=0;i<3;i++){c.strokeStyle='#ddf4ee44';c.lineWidth=2;c.beginPath();c.ellipse(x,y+(i-1)*r*.5,r*.8,r*.12,-.2,0,Math.PI);c.stroke();}c.fillStyle='#081421d9';c.fillRect(x-r,y-r,r,2*r);c.restore();circle(c,x,y,r,null,'#79d5e366');circle(c,x,y,r+4,null,'#79d5e312');}
+function orbitGeometry(w,h){const r=Math.min(h*.36,w*.28);return {x:w*.46,y:h*.49,r,er:Math.max(22,Math.min(35,r*.21)),mr:Math.max(14,Math.min(23,r*.14))};}
+function person(c,x,y,phi,color){c.save();c.translate(x,y);c.rotate(Math.PI/2-phi*RAD);c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2;circle(c,0,-12,3.1,color);c.beginPath();c.moveTo(0,-8);c.lineTo(0,0);c.moveTo(-5,-5);c.lineTo(5,-5);c.moveTo(0,0);c.lineTo(-4,5);c.moveTo(0,0);c.lineTo(4,5);c.stroke();c.restore();}
+function drawOrbit(){
+const {c,w,h}=fit($('orbit'));stars(c,w,h);
+const g=orbitGeometry(w,h),a=state.phase*RAD,mx=g.x+g.r*Math.cos(a),my=g.y-g.r*Math.sin(a),o=observerModel(state.phase,$('observeTime').value),p=o.phi*RAD,ox=g.x+g.er*Math.cos(p),oy=g.y-g.er*Math.sin(p);
+c.lineWidth=1;circle(c,g.x,g.y,g.r,null,'#5d778a66');
+for(let i=0;i<8;i++){const t=i*Math.PI/4;circle(c,g.x+g.r*Math.cos(t),g.y-g.r*Math.sin(t),3,'#607b8f');if($('labels').checked&&Math.abs(((norm(state.phase)-i*45+540)%360)-180)>17){const nr=g.r+24;text(c,['삭','초승','상현','차오름','망','기움','하현','그믐'][i],g.x+nr*Math.cos(t),g.y-nr*Math.sin(t),11,'#8d9fb1');}}
+const ax=g.x-g.r*.71,ay=g.y-g.r*.71;arrow(c,ax+8,ay-8,ax-3,ay+3,'#7992a7',1.4,6);
+const sunx=w-30;text(c,'태양',sunx,h*.45-35,13,'#ffd16e');circle(c,sunx,h*.45,13,'#ffd16e');
+for(let i=0;i<8;i++){const k=i*TAU/8;line(c,sunx+17*Math.cos(k),h*.45+17*Math.sin(k),sunx+21*Math.cos(k),h*.45+21*Math.sin(k),'#ffd16e88');}
+for(let i=-1;i<=1;i++)arrow(c,w-24,h*.7+i*17,w-70,h*.7+i*17,'#ffd16e99',1.5,6);text(c,'햇빛',w-46,h*.7+38,11,'#d9b66d');
+if($('rays').checked){const length=Math.min(105,g.r-g.er-g.mr-5);for(const f of [-.8,-.4,0,.4,.8]){const dy=f*g.mr,endpoint=mx+Math.sqrt(g.mr*g.mr-dy*dy),start=Math.min(w-12,mx+g.mr+length);arrow(c,start,my+dy,endpoint,my+dy,'#ffd16ebb',1.5,5);circle(c,endpoint,my+dy,1.8,'#ffe6a7');}}
+if($('sight').checked){const tx=-Math.sin(p),ty=-Math.cos(p);line(c,ox-tx*48,oy-ty*48,ox+tx*48,oy+ty*48,'#72d6ea66',1,[4,4]);const dx=mx-ox,dy=my-oy,len=Math.hypot(dx,dy),ex=mx-dx/len*g.mr,ey=my-dy/len*g.mr;arrow(c,ox,oy,ex,ey,o.visible?'#72d6ea':'#ffb2a2aa',1.7,7,o.visible?[]:[6,6]);if($('labels').checked)text(c,o.visible?'시선':'지평선 아래 방향',(ox+ex)/2,(oy+ey)/2-12,11,o.visible?'#72d6ea':'#ffb2a2');}
+earth(c,g.x,g.y,g.er);
+if($('labels').checked){text(c,'밤',g.x-g.er*.46,g.y,11,'#b3c8db','center',650);text(c,'낮',g.x+g.er*.46,g.y,11,'#ebf7ff','center',650);text(c,'지구',g.x,g.y+g.er+16,12,'#afc4d5');}
+topMoon(c,mx,my,g.mr);circle(c,mx,my,g.mr+5,null,'#c5ed9077');if($('labels').checked)text(c,'달',mx,my-g.mr-16,12,'#ecf0f2');
+person(c,ox+Math.cos(p)*3,oy-Math.sin(p)*3,o.phi,'#72d6ea');
+if($('labels').checked){const lx=g.x+(g.er+30)*Math.cos(p),ly=g.y-(g.er+30)*Math.sin(p);text(c,'관측자',lx+(Math.cos(p)<-.2?-13:13),ly,11,'#72d6ea',Math.cos(p)<-.2?'right':'left');}
+text(c,'↶ 공전 방향',14,17,11,'#8297aa','left');
+}
+function drawEarthView(){const {c,w,h}=fit($('moonView'));stars(c,w,h);const r=Math.min(h*.38,w*.27),o=observerModel(state.phase,$('observeTime').value);moonImage(c,w/2,h*.47,r,state.phase);if(!o.visible||phaseIndex(state.phase)===0)text(c,o.onHorizon?'위상 모형 · 현재 지평선 부근':'위상 비교용 모형 · 지금 위치에서는 관측 불가',w/2,h-13,11,'#ffb2a2');else if(Math.cos(o.phi*RAD)>.001)text(c,'낮에도 위상은 같아요 · 하늘 밝기는 생략',w/2,h-13,11,'#ffd16e');}
+function timeLabel(hour){const mins=Math.round(hour*60/10)*10;return `${String(Math.floor(mins/60)%24).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;}
+function updatePhase(){
+const i=phaseIndex(state.phase),d=phaseData[i],o=observerModel(state.phase,$('observeTime').value);
+$('phaseAngle').value=state.phase;$('phaseAngleText').textContent=`${Math.round(state.phase)}° · 삭 이후 약 ${(state.phase/360*29.53).toFixed(1)}일`;$('phaseName').textContent=d.name;$('litFraction').textContent=`${Math.round(lightFraction(state.phase)*100)}% 밝음`;$('phaseDescription').textContent=d.description;
+$('moonView').setAttribute('aria-label',`${d.name}, 밝은 비율 ${Math.round(lightFraction(state.phase)*100)}퍼센트. ${!o.visible?'현재 위치에서는 관측 불가.':''}`);
+$('orbit').setAttribute('aria-label',`달의 공전 모형, ${Math.round(state.phase)}도 ${d.name}. 드래그 또는 좌우 방향키로 이동.`);
+document.querySelectorAll('[data-phase]').forEach(b=>b.setAttribute('aria-pressed',String(Math.abs(norm(state.phase)-Number(b.dataset.phase))<.6)));
+const t=timeLabel(o.hour);let msg;
+if(i===0)msg=`${t} · 삭은 지구를 향한 면이 어둡고 밤에는 보이지 않아요.`;
+else if(o.onHorizon)msg=`${t} · 지평선 부근입니다. 뜨거나 지는 경계예요.`;
+else if(o.visible)msg=`${t} · ${o.isNight?'밤 쪽':Math.abs(Math.cos(o.phi*RAD))<.001?'낮·밤 경계의':'낮 쪽'} 관측자에게 지평선 위에 보여요.`;
+else msg=`${t} · 지평선 아래에 있어 관측할 수 없어요.`;
+$('visibility').textContent=msg;$('visibility').classList.toggle('below',!o.visible||i===0);drawOrbit();drawEarthView();
+}
+function drawSpinScene(canvas,ratio){
+const {c,w,h}=fit(canvas);stars(c,w,h);
+const cx=w/2,cy=h*.48,r=Math.min(w*.30,h*.32),mr=Math.min(24,r*.22),a=state.spin*RAD,mx=cx+r*Math.cos(a),my=cy-r*Math.sin(a);
+circle(c,cx,cy,r,null,'#5b718466');
+for(let i=0;i<4;i++){const k=i*Math.PI/2;circle(c,cx+r*Math.cos(k),cy-r*Math.sin(k),3,'#6b8294');}
+text(c,'먼 별을 향한 기준 방향 ↑',w-15,17,10,'#8da0b3','right');arrow(c,w-20,55,w-20,33,'#8497a8',1,4);line(c,cx,cy,mx,my,'#72d6ea55',1,[5,5]);
+earth(c,cx,cy,Math.max(20,r*.22));text(c,'지구',cx,cy+r*.22+16,11,'#abc3d7');
+const ori=Math.PI+ratio*a;circle(c,mx,my,mr,'#c1cbd2');c.save();c.beginPath();c.arc(mx,my,mr,0,TAU);c.clip();c.fillStyle='#718697';c.beginPath();c.moveTo(mx,my);c.arc(mx,my,mr,-ori-Math.PI/2,-ori+Math.PI/2);c.closePath();c.fill();c.restore();
+const px=mx+Math.cos(ori)*mr*.65,py=my-Math.sin(ori)*mr*.65,bx=mx-Math.cos(ori)*mr*.65,by=my+Math.sin(ori)*mr*.65;
+circle(c,px,py,6,'#ffd16e');text(c,'A',px,py,9,'#35250c','center',800);circle(c,bx,by,5.5,'#9ee3f4');text(c,'B',bx,by,9,'#153c49','center',800);
+arrow(c,mx,my,mx+Math.cos(ori)*(mr+23),my-Math.sin(ori)*(mr+23),'#ffd16e',1.8,6);circle(c,mx,my,mr+4,null,ratio===1?'#c5ed9066':'#ffd16e55');
+const rr=r+15;c.strokeStyle=ratio===1?'#c5ed90':'#ffd16e';c.lineWidth=2;c.beginPath();c.arc(cx,cy,rr,0,-a,true);c.stroke();
+if(state.spin>6){const ex=cx+rr*Math.cos(a),ey=cy-rr*Math.sin(a);arrow(c,ex+Math.sin(a)*7,ey+Math.cos(a)*7,ex,ey,ratio===1?'#c5ed90':'#ffd16e',1.6,6);}
+text(c,ratio===1?'A 방향이 늘 지구 쪽':ratio===0?'A 방향이 우주 공간에 고정':'A 방향이 더 빠르게 회전',cx,h-35,11,ratio===1?'#c5ed90':'#ffd16e');
+}
+function drawFace(canvas,ratio){const {c,w,h}=fit(canvas),r=Math.min(w,h)*.40,delta=spinDelta(state.spin,ratio);moonImage(c,w/2,h/2,r,180,true);for(const [theta,label,col]of [[delta,'A','#ffd16e'],[delta+Math.PI,'B','#9ee3f4']]){const depth=Math.cos(theta);if(depth>=-.001){const x=w/2+Math.sin(theta)*r*.94;c.save();c.translate(x,h/2);c.scale(Math.max(.11,depth),1);circle(c,0,0,r*.22,col);text(c,label,0,1,12,'#233140','center',800);c.restore();}}}
+function updateSpin(){$('spinAngle').value=state.spin;$('spinAngleText').textContent=`${Math.round(state.spin)}° · ${(state.spin/360).toFixed(2)}바퀴`;$('lockedStat').textContent=`자전 ${Math.round(state.spin)}° / 공전 ${Math.round(state.spin)}°`;$('compareStat').textContent=`자전 ${Math.round(state.spin*state.compare)}° / 공전 ${Math.round(state.spin)}°`;const cos=Math.cos(spinDelta(state.spin,state.compare));$('faceStatus').textContent=cos>.95?'지금은 A가 정면이에요':cos<-.95?'반대편 B가 정면에 보여요':Math.abs(cos)<.1?'A와 B가 가장자리에 보여요':cos>0?'A가 한쪽으로 이동했어요':'반대편 B가 보이고 있어요';$('comparisonFace').setAttribute('aria-label',$('faceStatus').textContent);drawSpinScene($('locked'),1);drawSpinScene($('comparison'),state.compare);drawFace($('lockedFace'),1);drawFace($('comparisonFace'),state.compare);}
+function setPlay(which,playing){state[which+'Playing']=playing;$(which+'Play').textContent=playing?'Ⅱ 일시 정지':'▶ 자동 재생';$(which+'Play').setAttribute('aria-pressed',String(playing));}
+function showPage(page,updateHash=true){setPlay('phase',false);setPlay('spin',false);state.page=page;$('phasePage').hidden=page!=='phase';$('spinPage').hidden=page!=='spin';for(const [id,p]of [['tabPhase','phase'],['tabSpin','spin']]){$(id).setAttribute('aria-selected',String(page===p));$(id).tabIndex=page===p?0:-1;}if(updateHash){try{history.replaceState(null,'',page==='spin'?'#rotation':'#phases');}catch{/* Local file previews may limit history changes. */}}requestAnimationFrame(()=>page==='phase'?updatePhase():updateSpin());}
+for(let i=0;i<8;i++){const b=document.createElement('button');b.dataset.phase=i*45;b.setAttribute('aria-pressed',String(i===2));b.innerHTML=`<canvas width="60" height="60" aria-hidden="true"></canvas><span>${phaseData[i].name}<small>${phaseData[i].sub}</small></span>`;b.addEventListener('click',()=>{setPlay('phase',false);state.phase=i*45;updatePhase();});$('phaseList').append(b);moonImage(b.querySelector('canvas').getContext('2d'),30,30,26,i*45);}
+$('phaseAngle').addEventListener('input',e=>{setPlay('phase',false);state.phase=Number(e.target.value);updatePhase();});
+$('spinAngle').addEventListener('input',e=>{setPlay('spin',false);state.spin=Number(e.target.value);updateSpin();});
+$('phasePlay').addEventListener('click',()=>setPlay('phase',!state.phasePlaying));
+$('spinPlay').addEventListener('click',()=>{if(state.spin>=360)state.spin=0;setPlay('spin',!state.spinPlaying);updateSpin();});
+$('phaseReset').addEventListener('click',()=>{setPlay('phase',false);state.phase=90;$('observeTime').value='auto';for(const id of ['rays','sight','labels'])$(id).checked=true;updatePhase();});
+$('spinReset').addEventListener('click',()=>{setPlay('spin',false);state.spin=0;setCompare(0);});
+for(const id of ['observeTime','rays','sight','labels'])$(id).addEventListener('change',updatePhase);
+function setCompare(ratio){state.compare=ratio;$('noSpin').setAttribute('aria-pressed',String(ratio===0));$('doubleSpin').setAttribute('aria-pressed',String(ratio===2));$('comparePill').textContent=`공전 1회 · 자전 ${ratio}회`;$('compareDescription').textContent=ratio===0?'자전하지 않으면 공전하는 동안 보이는 면이 달라져요.':'두 배로 자전해도 공전하는 동안 보이는 면이 달라져요.';$('comparison').setAttribute('aria-label',ratio===0?'자전하지 않는 가상의 달의 운동':'공전 1회에 자전 2회 하는 가상의 달의 운동');updateSpin();}
+$('noSpin').addEventListener('click',()=>setCompare(0));$('doubleSpin').addEventListener('click',()=>setCompare(2));
+document.querySelectorAll('[data-spin]').forEach(b=>b.addEventListener('click',()=>{setPlay('spin',false);state.spin=Number(b.dataset.spin);updateSpin();}));
+$('tabPhase').addEventListener('click',()=>showPage('phase'));$('tabSpin').addEventListener('click',()=>showPage('spin'));
+document.querySelector('.tabs').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const p=e.key==='Home'?'phase':e.key==='End'?'spin':state.page==='phase'?'spin':'phase';showPage(p);$(p==='phase'?'tabPhase':'tabSpin').focus();}});
+let dragging=false;
+function pointerAngle(e){const b=$('orbit').getBoundingClientRect(),scale=canvasScale(),g=orbitGeometry(b.width/scale,b.height/scale);state.phase=norm(Math.atan2(-((e.clientY-b.top)/scale-g.y),(e.clientX-b.left)/scale-g.x)/RAD);updatePhase();}
+$('orbit').addEventListener('pointerdown',e=>{dragging=true;$('orbit').setPointerCapture(e.pointerId);setPlay('phase',false);pointerAngle(e);});
+$('orbit').addEventListener('pointermove',e=>{if(dragging)pointerAngle(e);});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])$('orbit').addEventListener(ev,()=>dragging=false);
+$('orbit').addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();setPlay('phase',false);state.phase=norm(state.phase+(e.key==='ArrowRight'?5:-5));updatePhase();}});
+for(const [open,dialog,close]of [['guideBtn','guide','closeGuide'],['notesBtn','notes','closeNotes']]){$(open).addEventListener('click',()=>{setPlay('phase',false);setPlay('spin',false);$(dialog).showModal();});$(close).addEventListener('click',()=>$(dialog).close());}
+let toastTimer;function toast(msg){clearTimeout(toastTimer);$('toast').textContent=msg;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4200);}
+$('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('이 환경에서는 전체 화면을 열 수 없습니다. 브라우저에서 F11을 눌러 주세요.');}});
+document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=document.fullscreenElement?'⛶ 전체 화면 종료':'⛶ 전체 화면';});
+let resizeFrame;function redraw(){cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>state.page==='phase'?updatePhase():updateSpin());}
+new ResizeObserver(redraw).observe(document.querySelector('.app'));window.addEventListener('resize',redraw);
+document.addEventListener('visibilitychange',()=>{state.last=0;if(document.hidden){setPlay('phase',false);setPlay('spin',false);}});
+window.addEventListener('hashchange',()=>showPage(location.hash==='#rotation'?'spin':'phase',false));
+function tick(now){const dt=state.last?Math.min((now-state.last)/1000,.06):0;state.last=now;if(state.phasePlaying){state.phase=(state.phase+dt*12*Number($('phaseSpeed').value))%360;updatePhase();}if(state.spinPlaying){state.spin=Math.min(360,state.spin+dt*20);updateSpin();if(state.spin===360)setPlay('spin',false);}requestAnimationFrame(tick);}
+showPage(location.hash==='#rotation'?'spin':'phase',false);requestAnimationFrame(tick);
+})();
+</script>
+</body></html>
+
