@@ -3,16 +3,16 @@
 중학교 과학 수업 시간에 전자칠판이나 학생 기기에서 바로 열어 쓰는 웹 도구 모음입니다.
 설치 없이 브라우저에서 열립니다.
 
-**바로 열기:** https://galaxy31.github.io/science_class/
+**바로 열기:** https://science-class153.vercel.app/
 
 ## 분야별 도구
 
 | 분야 | 주소 | 도구 |
 |---|---|---|
-| 물리학 | [/physics/](https://galaxy31.github.io/science_class/physics/) | 준비 중 |
-| 화학 | [/chemistry/](https://galaxy31.github.io/science_class/chemistry/) | [원소 주기율표 탐험](https://galaxy31.github.io/science_class/chemistry/periodic_table/) |
-| 생명과학 | [/life_science/](https://galaxy31.github.io/science_class/life_science/) | 준비 중 |
-| 지구과학 | [/earth_science/](https://galaxy31.github.io/science_class/earth_science/) | [시차 관찰 산책길](https://galaxy31.github.io/science_class/earth_science/parallax/), [연주 시차 관측소](https://galaxy31.github.io/science_class/earth_science/annual_parallax/), [별의 밝기와 등급](https://galaxy31.github.io/science_class/earth_science/star_brightness/), [겉보기 등급과 절대 등급](https://galaxy31.github.io/science_class/earth_science/abs_magnitude/), [우리 은하와 태양계](https://galaxy31.github.io/science_class/earth_science/milky_way/), [굴절 망원경과 반사 망원경](https://galaxy31.github.io/science_class/earth_science/telescope/), [달의 위상](https://galaxy31.github.io/science_class/earth_science/moon_phase/) |
+| 물리학 | [/physics/](https://science-class153.vercel.app/physics/) | 준비 중 |
+| 화학 | [/chemistry/](https://science-class153.vercel.app/chemistry/) | [원소 주기율표 탐험](https://science-class153.vercel.app/chemistry/periodic_table/) |
+| 생명과학 | [/life_science/](https://science-class153.vercel.app/life_science/) | 준비 중 |
+| 지구과학 | [/earth_science/](https://science-class153.vercel.app/earth_science/) | [시차 관찰 산책길](https://science-class153.vercel.app/earth_science/parallax/), [연주 시차 관측소](https://science-class153.vercel.app/earth_science/annual_parallax/), [별의 밝기와 등급](https://science-class153.vercel.app/earth_science/star_brightness/), [겉보기 등급과 절대 등급](https://science-class153.vercel.app/earth_science/abs_magnitude/), [우리 은하와 태양계](https://science-class153.vercel.app/earth_science/milky_way/), [굴절 망원경과 반사 망원경](https://science-class153.vercel.app/earth_science/telescope/), [달의 위상](https://science-class153.vercel.app/earth_science/moon_phase/) |
 
 ## 도구 추가하는 법
 

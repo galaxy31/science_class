@@ -1,7 +1,7 @@
 # science_class — 과학 수업용 웹 도구 모음
 
 중학교 과학 수업에서 전자칠판과 학생 기기로 여는 인터랙티브 웹 도구 저장소입니다.
-GitHub Pages로 배포됩니다: https://galaxy31.github.io/science_class/
+Vercel로 배포됩니다 (main 브랜치에 push하면 자동 배포): https://science-class153.vercel.app/
 
 ## 폴더 구조
 
